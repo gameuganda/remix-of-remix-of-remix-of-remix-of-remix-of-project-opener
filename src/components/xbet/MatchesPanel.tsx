@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Search, Star, BarChart3, RefreshCw, ArrowUp, ArrowDown, Zap, Lock, ChevronRight, Home, Trophy } from "lucide-react";
 import { SportIcon, SportGlyph } from "./SportIcon";
 
