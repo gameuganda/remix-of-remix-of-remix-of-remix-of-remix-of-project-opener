@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Search } from "lucide-react";
 import { PageShell } from "@/components/xbet/PageShell";
-import { leagueActivityQuery, type LeagueActivity } from "@/lib/sports-queries";
+import { leagueActivityQuery, leaguesQuery, type LeagueActivity } from "@/lib/sports-queries";
 import { SPORTS, SPORT_LABELS, type Sport } from "@/lib/sports-types";
 
 export const Route = createFileRoute("/countries")({
