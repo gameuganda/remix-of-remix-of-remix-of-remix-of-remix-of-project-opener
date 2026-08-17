@@ -1378,3 +1378,139 @@ export async function fetchLeagueStandings(
 ): Promise<StandingRow[]> {
   return fetchStandings(sport, leagueKey);
 }
+
+/* ---------------- on-demand odds + provider-wide search ---------------- */
+
+/** Week-long chunks covering an inclusive day-offset range (provider caps at 7 days). */
+function dayChunks(fromDay: number, toDay: number): Array<{ from: string; to: string }> {
+  const out: Array<{ from: string; to: string }> = [];
+  for (let start = fromDay; start <= toDay; start += 7) {
+    out.push({ from: ymd(start), to: ymd(Math.min(start + 6, toDay)) });
+  }
+  return out;
+}
+
+/**
+ * Per-match odds lookup for fixtures the bulk feed skipped. Falls back to the
+ * FullOdds endpoint so a fixture priced only there still shows prices.
+ */
+export async function fetchOddsForIds(
+  sport: Sport,
+  ids: string[],
+): Promise<Map<string, Market[]>> {
+  const out = new Map<string, Market[]>();
+  await pool([...new Set(ids)].slice(0, 600), 12, async (id) => {
+    try {
+      const res = await call<Record<string, unknown>>(sport, { met: "Odds", matchId: id }, 60_000);
+      let markets = parseOddsNode(sport, res?.[id] ?? null);
+      if (markets.length === 0) {
+        const full = await call<Record<string, unknown>>(
+          sport,
+          { met: "FullOdds", matchId: id },
+          60_000,
+        );
+        const node = full?.[id];
+        if (node && typeof node === "object") markets = parseNestedOdds(node as Json);
+      }
+      if (markets.length > 0) out.set(id, markets);
+    } catch {
+      /* odds are optional */
+    }
+  });
+  return out;
+}
+
+export type MatchOddsPatch = { id: string; marketCount: number; odds: MainOdds };
+
+/** Main-market odds for a list of match ids, used to hydrate rows lazily. */
+export async function fetchMatchOdds(sport: Sport, ids: string[]): Promise<MatchOddsPatch[]> {
+  const found = await fetchOddsForIds(sport, ids);
+  return [...found.entries()].map(([id, markets]) => ({
+    id,
+    marketCount: markets.length,
+    odds: mainOdds(sport, markets),
+  }));
+}
+
+/**
+ * Search the provider itself, not just the loaded page: team / player names are
+ * resolved through met=Teams and their fixtures fetched directly, and league or
+ * country names pull that competition's fixtures.
+ */
+export async function searchMatchesEverywhere(sport: Sport, term: string): Promise<Match[]> {
+  const q = term.trim();
+  if (q.length < 2) return [];
+  const needle = q.toLowerCase();
+
+  const rows: Json[] = [];
+  const ranges = dayChunks(-2, 60);
+
+  // 1) Teams / players matching the term -> their own fixture list.
+  const teams = await fetchTeams(sport, { search: q }).catch(() => []);
+  const teamKeys = teams
+    .filter((t) => t.key > 0)
+    .sort((a, b) => {
+      const an = a.name.toLowerCase();
+      const bn = b.name.toLowerCase();
+      return (an.startsWith(needle) ? 0 : 1) - (bn.startsWith(needle) ? 0 : 1);
+    })
+    .slice(0, 5)
+    .map((t) => t.key);
+
+  // 2) Competitions / countries matching the term -> their fixture list.
+  const leagues = await fetchLeagues(sport).catch(() => []);
+  const leagueKeys = leagues
+    .filter(
+      (l) =>
+        l.name.toLowerCase().includes(needle) || l.country.toLowerCase().includes(needle),
+    )
+    .slice(0, 4)
+    .map((l) => l.key);
+
+  const combos = [
+    ...teamKeys.flatMap((id) => ranges.map((r) => ({ teamId: String(id), ...r }))),
+    ...leagueKeys.flatMap((id) => ranges.map((r) => ({ leagueId: String(id), ...r }))),
+  ];
+
+  await pool(combos, 8, async (c) => {
+    const res = await call<unknown>(sport, { met: "Fixtures", ...c }, 3 * 60_000);
+    rows.push(...rowsOf(res));
+  });
+
+  const nowMs = ugNow().getTime();
+  const list = [
+    ...new Map(
+      rows.filter((f) => f && f["event_key"] != null).map((f) => [String(f["event_key"]), f]),
+    ).values(),
+  ]
+    .filter((f) => {
+      const status = String(f["event_status"] ?? "");
+      if (FINISHED_RE.test(status) || VOID_RE.test(status)) return false;
+      const start = Date.parse(`${f["event_date"]}T${f["event_time"] ?? "00:00"}:00Z`);
+      return !Number.isFinite(start) || start >= nowMs - 3 * 60 * 60_000;
+    })
+    .filter((f) => {
+      const hay = [
+        f["event_home_team"],
+        f["event_away_team"],
+        f["event_first_player"],
+        f["event_second_player"],
+        f["league_name"],
+        f["country_name"],
+      ]
+        .map((v) => String(v ?? ""))
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(needle);
+    })
+    .sort((a, b) =>
+      `${a["event_date"]}${a["event_time"]}`.localeCompare(`${b["event_date"]}${b["event_time"]}`),
+    )
+    .slice(0, 300);
+
+  const odds = await fetchOddsForIds(
+    sport,
+    list.map((f) => String(f["event_key"])),
+  );
+  return list.map((f) => normalise(sport, f, odds.get(String(f["event_key"])) ?? []));
+}
