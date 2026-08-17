@@ -113,22 +113,26 @@ export function LeftSidebar() {
 
   const byCountry = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const hasActivity = matchCounts.size > 0;
     const map = new Map<string, League[]>();
 
-    // Fall back to the raw catalogue only while the activity feed is loading,
-    // so the sidebar is never empty on first paint.
-    const source: League[] = hasActivity
-      ? (activity.data ?? []).map((a) => ({
-          key: a.leagueKey,
-          name: a.league,
-          country: a.country,
-          countryKey: a.countryKey,
-          logo: a.leagueLogo,
-          countryLogo: a.countryLogo,
-          sport: a.sport,
-        }))
-      : (leagues.data ?? []);
+    // Every country and competition the provider offers is listed, with the
+    // activity feed only supplying the match counts and the ordering. Leagues
+    // seen in the feed but missing from the catalogue are added too.
+    const source: League[] = [...(leagues.data ?? [])];
+    const known = new Set(source.map((l) => l.key));
+    for (const a of activity.data ?? []) {
+      if (known.has(a.leagueKey)) continue;
+      known.add(a.leagueKey);
+      source.push({
+        key: a.leagueKey,
+        name: a.league,
+        country: a.country,
+        countryKey: a.countryKey,
+        logo: a.leagueLogo,
+        countryLogo: a.countryLogo,
+        sport: a.sport,
+      });
+    }
 
     for (const l of source) {
       if (q && !`${l.country} ${l.name}`.toLowerCase().includes(q)) continue;
@@ -137,9 +141,14 @@ export function LeftSidebar() {
       map.set(l.country, list);
     }
     for (const list of map.values())
-      list.sort((a, b) => (matchCounts.get(b.key) ?? 0) - (matchCounts.get(a.key) ?? 0));
+      list.sort(
+        (a, b) =>
+          (matchCounts.get(b.key) ?? 0) - (matchCounts.get(a.key) ?? 0) ||
+          a.name.localeCompare(b.name),
+      );
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [leagues.data, activity.data, matchCounts, search]);
+
 
 
   const liveList = top.data ?? [];
