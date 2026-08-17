@@ -20,18 +20,29 @@ export const createRoyalLaunch = createServerFn({ method: "POST" })
     const operatorId = process.env["ROYAL_OPERATOR_ID"] || ROYAL.operatorId;
     const secret = process.env["ROYAL_API_SECRET"] || ROYAL.secret;
 
-    // The game server calls our wallet API server-to-server, so it needs a
-    // publicly reachable origin. Sandboxed `id-preview--…` hosts redirect every
-    // request, which made every wallet call fail and the game never started;
-    // map them onto the stable `project--…-dev` host instead.
-    const requestOrigin = new URL(getRequest().url).origin;
-    const envOrigin = process.env["ROYAL_WALLET_ORIGIN"];
-    const stable = requestOrigin.replace(
-      /^https:\/\/id-preview--([0-9a-f-]+)\.lovable\.app$/i,
+    // The game server calls our wallet API server-to-server, so the origin we
+    // hand it must be publicly reachable from the internet.
+    //  * `id-preview--…` hosts redirect every request -> map to `project--…-dev`.
+    //  * inside the sandbox the request can arrive as `localhost` / an internal
+    //    host, which the game server can never call back — fall back to the
+    //    project's stable public host in that case.
+    const req = getRequest();
+    const requestUrl = new URL(req.url);
+    const forwardedHost = req.headers.get("x-forwarded-host");
+    const host = forwardedHost || req.headers.get("host") || requestUrl.host;
+    const proto = req.headers.get("x-forwarded-proto") || requestUrl.protocol.replace(":", "");
+    const rawOrigin = `${proto}://${host}`;
+
+    const mapped = rawOrigin.replace(
+      /^https?:\/\/id-preview--([0-9a-f-]+)\.lovable\.app$/i,
       "https://project--$1-dev.lovable.app",
     );
-    const origin = (envOrigin || stable).replace(/\/$/, "");
+    const reachable = /^https:\/\//i.test(mapped) && !/localhost|127\.0\.0\.1|0\.0\.0\.0|\.local(:|$)/i.test(mapped);
+
+    const origin = (process.env["ROYAL_WALLET_ORIGIN"] || (reachable ? mapped : ROYAL.walletOrigin))
+      .replace(/\/$/, "");
     const walletUrl = `${origin}${ROYAL.walletPath}`;
+
 
     const body = JSON.stringify({
       operatorId,
