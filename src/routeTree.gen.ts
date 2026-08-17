@@ -55,6 +55,7 @@ import { Route as ApiPublicTimeRouteImport } from './routes/api/public/time'
 import { Route as ResultDetailSportMatchIdRouteImport } from './routes/result-detail.$sport.$matchId'
 import { Route as ResultHighlightsSportMatchIdRouteImport } from './routes/result-highlights.$sport.$matchId'
 import { Route as TeamSportTeamIdRouteImport } from './routes/team.$sport.$teamId'
+import { Route as ApiPublicRoyalDebugRouteImport } from './routes/api/public/royal/debug'
 import { Route as ApiPublicRoyalWalletSplatRouteImport } from './routes/api/public/royal/wallet/$'
 
 const IndexRoute = IndexRouteImport.update({
@@ -291,6 +292,11 @@ const TeamSportTeamIdRoute = TeamSportTeamIdRouteImport.update({
   path: '/team/$sport/$teamId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRoyalDebugRoute = ApiPublicRoyalDebugRouteImport.update({
+  id: '/api/public/royal/debug',
+  path: '/api/public/royal/debug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRoyalWalletSplatRoute =
   ApiPublicRoyalWalletSplatRouteImport.update({
     id: '/api/public/royal/wallet/$',
@@ -345,6 +351,7 @@ export interface FileRoutesByFullPath {
   '/admin/partners/': typeof AdminPartnersIndexRoute
   '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
+  '/api/public/royal/debug': typeof ApiPublicRoyalDebugRoute
   '/api/public/royal/wallet/$': typeof ApiPublicRoyalWalletSplatRoute
 }
 export interface FileRoutesByTo {
@@ -393,6 +400,7 @@ export interface FileRoutesByTo {
   '/admin/partners': typeof AdminPartnersIndexRoute
   '/admin/transactions': typeof AdminTransactionsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
+  '/api/public/royal/debug': typeof ApiPublicRoyalDebugRoute
   '/api/public/royal/wallet/$': typeof ApiPublicRoyalWalletSplatRoute
 }
 export interface FileRoutesById {
@@ -443,6 +451,7 @@ export interface FileRoutesById {
   '/admin/partners/': typeof AdminPartnersIndexRoute
   '/admin/transactions/': typeof AdminTransactionsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
+  '/api/public/royal/debug': typeof ApiPublicRoyalDebugRoute
   '/api/public/royal/wallet/$': typeof ApiPublicRoyalWalletSplatRoute
 }
 export interface FileRouteTypes {
@@ -494,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/partners/'
     | '/admin/transactions/'
     | '/admin/users/'
+    | '/api/public/royal/debug'
     | '/api/public/royal/wallet/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/admin/partners'
     | '/admin/transactions'
     | '/admin/users'
+    | '/api/public/royal/debug'
     | '/api/public/royal/wallet/$'
   id:
     | '__root__'
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/admin/partners/'
     | '/admin/transactions/'
     | '/admin/users/'
+    | '/api/public/royal/debug'
     | '/api/public/royal/wallet/$'
   fileRoutesById: FileRoutesById
 }
@@ -623,6 +635,7 @@ export interface RootRouteChildren {
   ResultDetailSportMatchIdRoute: typeof ResultDetailSportMatchIdRoute
   ResultHighlightsSportMatchIdRoute: typeof ResultHighlightsSportMatchIdRoute
   TeamSportTeamIdRoute: typeof TeamSportTeamIdRoute
+  ApiPublicRoyalDebugRoute: typeof ApiPublicRoyalDebugRoute
   ApiPublicRoyalWalletSplatRoute: typeof ApiPublicRoyalWalletSplatRoute
 }
 
@@ -950,6 +963,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamSportTeamIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/royal/debug': {
+      id: '/api/public/royal/debug'
+      path: '/api/public/royal/debug'
+      fullPath: '/api/public/royal/debug'
+      preLoaderRoute: typeof ApiPublicRoyalDebugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/royal/wallet/$': {
       id: '/api/public/royal/wallet/$'
       path: '/api/public/royal/wallet/$'
@@ -1033,6 +1053,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResultDetailSportMatchIdRoute: ResultDetailSportMatchIdRoute,
   ResultHighlightsSportMatchIdRoute: ResultHighlightsSportMatchIdRoute,
   TeamSportTeamIdRoute: TeamSportTeamIdRoute,
+  ApiPublicRoyalDebugRoute: ApiPublicRoyalDebugRoute,
   ApiPublicRoyalWalletSplatRoute: ApiPublicRoyalWalletSplatRoute,
 }
 export const routeTree = rootRouteImport

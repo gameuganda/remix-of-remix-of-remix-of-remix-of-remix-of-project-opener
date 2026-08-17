@@ -172,22 +172,17 @@ export function MatchesPanel() {
   const showSkeleton = matches.isPending || (matches.isFetching && !matches.data);
 
   const visible = useMemo(() => {
-    let list = matches.data ?? [];
-    // Hide events with no odds at all (results keep showing final scores) so
-    // every row on screen is actually bettable — filtered lists included.
-    if (scope !== "results") {
-      list = list.filter((m) => {
-        const o = m.odds ?? {};
-        const values = isFootball
-          ? [o.home, o.draw, o.away, o.over, o.under, o.bttsYes, o.bttsNo]
-          : [o.home, o.away];
-        return values.some((v) => typeof v === "number" && v > 0);
-      });
-    }
+    // Every fixture the provider returns is listed, for every country and
+    // league. Markets that have no price simply render as locked buttons, so a
+    // missing odds feed no longer hides whole competitions.
+    const list = matches.data ?? [];
     const q = query.trim().toLowerCase();
     if (!q) return list;
-    return list.filter((m) => `${m.home} ${m.away} ${m.league}`.toLowerCase().includes(q));
-  }, [matches.data, query, scope, isFootball, filtered]);
+    return list.filter((m) =>
+      `${m.home} ${m.away} ${m.league} ${m.country ?? ""}`.toLowerCase().includes(q),
+    );
+  }, [matches.data, query]);
+
 
 
   // Upcoming / Top Bets group by day; big leagues first, then start time.

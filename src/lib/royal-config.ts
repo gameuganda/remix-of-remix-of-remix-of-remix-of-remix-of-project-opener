@@ -19,4 +19,10 @@ export const ROYAL = {
   currency: "EUR",
   /** Path of the wallet API this platform exposes to the game. */
   walletPath: "/api/public/royal/wallet",
+  /**
+   * Stable public origin the game server calls back on when the incoming
+   * request host isn't publicly reachable (sandbox / localhost SSR).
+   */
+  walletOrigin: "https://project--7fc9c35e-99f9-488c-859b-e65304cb222b-dev.lovable.app",
 } as const;
+
