@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Search } from "lucide-react";
 import { PageShell } from "@/components/xbet/PageShell";
-import { leagueActivityQuery, type LeagueActivity } from "@/lib/sports-queries";
+import { leagueActivityQuery, leaguesQuery, type LeagueActivity } from "@/lib/sports-queries";
 import { SPORTS, SPORT_LABELS, type Sport } from "@/lib/sports-types";
 
 export const Route = createFileRoute("/countries")({
@@ -92,12 +92,33 @@ function CountriesPage() {
   const [sport, setSport] = useState<Sport>("football");
   const [search, setSearch] = useState("");
   const activity = useQuery(leagueActivityQuery(sport, "upcoming"));
+  const leagues = useQuery(leaguesQuery(sport));
 
   const groups = useMemo<CountryGroup[]>(() => {
     const q = search.trim().toLowerCase();
+    const counts = new Map((activity.data ?? []).map((a) => [a.leagueKey, a]));
+
+    // The full provider catalogue is listed; the activity feed only adds match
+    // counts, so no country or competition is ever hidden.
+    const source: LeagueActivity[] = (leagues.data ?? []).map((l) => {
+      const a = counts.get(l.key);
+      return {
+        leagueKey: l.key,
+        league: l.name,
+        leagueLogo: l.logo,
+        country: l.country,
+        countryKey: l.countryKey,
+        countryLogo: l.countryLogo,
+        matches: a?.matches ?? 0,
+        live: a?.live ?? 0,
+        sport,
+      };
+    });
+    const known = new Set(source.map((l) => l.leagueKey));
+    for (const a of activity.data ?? []) if (!known.has(a.leagueKey)) source.push(a);
+
     const map = new Map<string, CountryGroup>();
-    for (const l of activity.data ?? []) {
-      if (l.matches <= 0) continue;
+    for (const l of source) {
       if (q && !`${l.country} ${l.league}`.toLowerCase().includes(q)) continue;
       const key = l.country || "International";
       const g =
@@ -113,15 +134,17 @@ function CountriesPage() {
       g.matches += l.matches;
       map.set(key, g);
     }
-    for (const g of map.values()) g.leagues.sort((a, b) => b.matches - a.matches);
-    return [...map.values()].sort((a, b) => b.matches - a.matches);
-  }, [activity.data, search]);
+    for (const g of map.values())
+      g.leagues.sort((a, b) => b.matches - a.matches || a.league.localeCompare(b.league));
+    return [...map.values()].sort((a, b) => b.matches - a.matches || a.country.localeCompare(b.country));
+  }, [activity.data, leagues.data, search, sport]);
 
   return (
     <PageShell
       title="Countries & leagues"
-      subtitle="Only countries and competitions that actually have matches scheduled."
+      subtitle="Every country and competition available from our sports feed."
     >
+
       <div className="mb-2 flex flex-wrap items-center gap-2">
         {SPORTS.map((s) => (
           <button
