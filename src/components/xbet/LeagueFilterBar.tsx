@@ -93,7 +93,7 @@ function Scroller({ children }: { children: React.ReactNode }) {
 }
 
 export function LeagueFilterBar() {
-  const { sport, scope, leagueIds, countryIds, toggleLeague, setLeagues, setSport, clearFilters } =
+  const { sport, scope, leagueIds, countryIds, toggleLeague, setLeagues, toggleCountry, setSport, clearFilters } =
     useSportFilters();
   const leagues = useQuery(leaguesQuery(sport));
 
@@ -185,7 +185,7 @@ export function LeagueFilterBar() {
                       // The provider may name this competition differently:
                       // never leave the tile dead — open the whole country.
                       const country = all.find((l) => p.country?.test(l.country));
-                      if (country) setCountries([country.countryKey]);
+                      if (country) toggleCountry(country.countryKey);
                       return;
                     }
                     setLeagues(on ? [] : keys);
