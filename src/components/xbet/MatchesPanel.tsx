@@ -238,18 +238,17 @@ export function MatchesPanel() {
     return () => io.disconnect();
   }, [hasMore, sortedAll.length]);
 
-  // Fixtures the bulk odds feed skipped are topped up per match — every match on
-  // the rendered page is hydrated (in provider-friendly batches), so no listed
-  // competition stays without the prices the provider actually publishes.
-  const missingChunks = useMemo(() => {
-    const ids = pageList.filter((m) => m.marketCount === 0).map((m) => m.id);
+  // Hydrate every rendered fixture from both Odds and FullOdds. A bulk row can
+  // report a non-zero market count while still missing its main 1/X/2 prices.
+  const oddsChunks = useMemo(() => {
+    const ids = pageList.map((m) => m.id);
     const chunks: string[][] = [];
     for (let i = 0; i < ids.length; i += 60) chunks.push(ids.slice(i, i + 60));
     return chunks;
   }, [pageList]);
 
   const oddsResults = useQueries({
-    queries: missingChunks.map((ids) => matchOddsQuery(sport, ids)),
+    queries: oddsChunks.map((ids) => matchOddsQuery(sport, ids)),
   });
 
   const visible = useMemo(() => {
