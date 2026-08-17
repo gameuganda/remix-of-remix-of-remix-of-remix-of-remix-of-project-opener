@@ -9,7 +9,13 @@ import { useSportFilters } from "./SportFilterContext";
 import { MatchesListSkeleton } from "./Skeletons";
 import { useOddsFlash, oddsFlashClass } from "@/lib/use-odds-flash";
 
-import { matchesQuery, leaguesQuery, type Match } from "@/lib/sports-queries";
+import {
+  matchesQuery,
+  leaguesQuery,
+  matchOddsQuery,
+  matchSearchQuery,
+  type Match,
+} from "@/lib/sports-queries";
 import { leagueRank } from "@/lib/popular";
 import { LeagueFilterBar, CountryFilterStrip } from "./LeagueFilterBar";
 import blueBanner from "@/assets/blue-banner.jpg";
