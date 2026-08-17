@@ -595,10 +595,24 @@ export function MatchesPanel() {
         </div>
         ))}
 
+      {!showSkeleton && hasMore && (
+        <div ref={sentinel} className="px-3 py-4 text-center">
+          <button
+            onClick={() => setLimit((n) => Math.min(n + 60, sortedAll.length))}
+            className="text-[12px] font-bold text-xb-blue"
+          >
+            Loading more matches…
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between px-3 py-2 text-[11px] text-xb-text-muted">
         <span>Live data & bookmaker odds by AllSportsAPI</span>
-        <span>Showing {visible.length} events</span>
+        <span>
+          Showing {visible.length} of {sortedAll.length} events
+        </span>
       </div>
+
     </div>
   );
 }
