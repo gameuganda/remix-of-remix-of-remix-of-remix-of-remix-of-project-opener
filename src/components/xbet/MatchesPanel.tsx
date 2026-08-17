@@ -204,43 +204,70 @@ export function MatchesPanel() {
     return [...new Map([...local, ...(search.data ?? [])].map((m) => [m.id, m])).values()];
   }, [matches.data, search.data, searching, debounced]);
 
-  // Fixtures the bulk odds feed skipped are topped up per match so every listed
-  // game ends up showing the prices the provider actually publishes.
-  const missingOddsIds = useMemo(
-    () =>
-      baseList
-        .filter((m) => m.marketCount === 0)
-        .map((m) => m.id)
-        // Nearest kick-offs first: those are the ones bookmakers have priced.
-        .slice(0, 200),
-    [baseList],
-  );
-  const extraOdds = useQuery(matchOddsQuery(sport, missingOddsIds));
+  // Upcoming / Top Bets group by day; big leagues first, then start time.
+  const byTime = scope === "upcoming" || scope === "topbets";
+
+  const sortedAll = useMemo(() => {
+    const rank = (m: Match) => leagueRank(m.sport, m.league ?? "", m.country ?? "");
+    return byTime
+      ? [...baseList].sort((a, b) => rank(a) - rank(b) || a.kickoff.localeCompare(b.kickoff))
+      : [...baseList].sort((a, b) => rank(a) - rank(b) || a.kickoff.localeCompare(b.kickoff));
+  }, [baseList, byTime]);
+
+  // Pagination: render a page at a time and load more as the user scrolls.
+  const PAGE = 60;
+  const [limit, setLimit] = useState(PAGE);
+  useEffect(() => {
+    setLimit(PAGE);
+  }, [sport, scope, leagueIds.join(","), countryIds.join(","), debounced]);
+  const pageList = useMemo(() => sortedAll.slice(0, limit), [sortedAll, limit]);
+  const hasMore = sortedAll.length > pageList.length;
+
+  const sentinel = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinel.current;
+    if (!el || !hasMore) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting))
+          setLimit((n) => Math.min(n + PAGE, sortedAll.length));
+      },
+      { rootMargin: "600px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasMore, sortedAll.length]);
+
+  // Fixtures the bulk odds feed skipped are topped up per match — every match on
+  // the rendered page is hydrated (in provider-friendly batches), so no listed
+  // competition stays without the prices the provider actually publishes.
+  const missingChunks = useMemo(() => {
+    const ids = pageList.filter((m) => m.marketCount === 0).map((m) => m.id);
+    const chunks: string[][] = [];
+    for (let i = 0; i < ids.length; i += 60) chunks.push(ids.slice(i, i + 60));
+    return chunks;
+  }, [pageList]);
+
+  const oddsResults = useQueries({
+    queries: missingChunks.map((ids) => matchOddsQuery(sport, ids)),
+  });
 
   const visible = useMemo(() => {
-    const patches = extraOdds.data;
-    if (!patches || patches.length === 0) return baseList;
-    const byId = new Map(patches.map((p) => [p.id, p]));
-    return baseList.map((m) => {
+    const byId = new Map<string, { odds: Match["odds"]; marketCount: number }>();
+    for (const r of oddsResults)
+      for (const p of r.data ?? []) byId.set(p.id, { odds: p.odds, marketCount: p.marketCount });
+    if (byId.size === 0) return pageList;
+    return pageList.map((m) => {
       const p = byId.get(m.id);
       return p ? { ...m, odds: p.odds, marketCount: p.marketCount } : m;
     });
-  }, [baseList, extraOdds.data]);
-
-
-
-  // Upcoming / Top Bets group by day; big leagues first, then start time.
-  const byTime = scope === "upcoming" || scope === "topbets";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageList, oddsResults.map((r) => r.dataUpdatedAt).join(",")]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, Match[]>();
     const rank = (m: Match) => leagueRank(m.sport, m.league ?? "", m.country ?? "");
-    const sorted = byTime
-      ? [...visible].sort(
-          (a, b) => rank(a) - rank(b) || a.kickoff.localeCompare(b.kickoff),
-        )
-      : [...visible].sort((a, b) => rank(a) - rank(b));
-    for (const m of sorted) {
+    for (const m of visible) {
       const key = byTime ? ugDateKey(m.date, m.time) : m.league;
       const list = map.get(key) ?? [];
       list.push(m);
@@ -250,6 +277,7 @@ export function MatchesPanel() {
       list.sort((a, b) => rank(a) - rank(b) || a.kickoff.localeCompare(b.kickoff));
     return [...map.entries()];
   }, [visible, byTime]);
+
 
 
   return (
