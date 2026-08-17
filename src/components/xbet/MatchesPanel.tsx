@@ -9,7 +9,13 @@ import { useSportFilters } from "./SportFilterContext";
 import { MatchesListSkeleton } from "./Skeletons";
 import { useOddsFlash, oddsFlashClass } from "@/lib/use-odds-flash";
 
-import { matchesQuery, leaguesQuery, type Match } from "@/lib/sports-queries";
+import {
+  matchesQuery,
+  leaguesQuery,
+  matchOddsQuery,
+  matchSearchQuery,
+  type Match,
+} from "@/lib/sports-queries";
 import { leagueRank } from "@/lib/popular";
 import { LeagueFilterBar, CountryFilterStrip } from "./LeagueFilterBar";
 import blueBanner from "@/assets/blue-banner.jpg";
@@ -167,21 +173,59 @@ export function MatchesPanel() {
 
 
   const filtered = leagueIds.length > 0 || countryIds.length > 0;
+
+  // Typed search hits the provider directly (teams, players, leagues, countries),
+  // so results are not limited to the rows already on screen.
+  const [debounced, setDebounced] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim()), 350);
+    return () => clearTimeout(t);
+  }, [query]);
+  const searching = debounced.length >= 2;
+  const search = useQuery(matchSearchQuery(sport, debounced));
+
   // A new selection must never show the previous one's rows: while the fresh
   // list loads we render the match skeleton instead of stale data.
-  const showSkeleton = matches.isPending || (matches.isFetching && !matches.data);
+  const showSkeleton = searching
+    ? search.isPending && !search.data
+    : matches.isPending || (matches.isFetching && !matches.data);
 
-  const visible = useMemo(() => {
+  const baseList = useMemo(() => {
     // Every fixture the provider returns is listed, for every country and
     // league. Markets that have no price simply render as locked buttons, so a
     // missing odds feed no longer hides whole competitions.
     const list = matches.data ?? [];
-    const q = query.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter((m) =>
+    if (!searching) return list;
+    const q = debounced.toLowerCase();
+    const local = list.filter((m) =>
       `${m.home} ${m.away} ${m.league} ${m.country ?? ""}`.toLowerCase().includes(q),
     );
-  }, [matches.data, query]);
+    // Local hits first, then everything else the provider knows about.
+    return [...new Map([...local, ...(search.data ?? [])].map((m) => [m.id, m])).values()];
+  }, [matches.data, search.data, searching, debounced]);
+
+  // Fixtures the bulk odds feed skipped are topped up per match so every listed
+  // game ends up showing the prices the provider actually publishes.
+  const missingOddsIds = useMemo(
+    () =>
+      baseList
+        .filter((m) => m.marketCount === 0)
+        .map((m) => m.id)
+        // Nearest kick-offs first: those are the ones bookmakers have priced.
+        .slice(0, 200),
+    [baseList],
+  );
+  const extraOdds = useQuery(matchOddsQuery(sport, missingOddsIds));
+
+  const visible = useMemo(() => {
+    const patches = extraOdds.data;
+    if (!patches || patches.length === 0) return baseList;
+    const byId = new Map(patches.map((p) => [p.id, p]));
+    return baseList.map((m) => {
+      const p = byId.get(m.id);
+      return p ? { ...m, odds: p.odds, marketCount: p.marketCount } : m;
+    });
+  }, [baseList, extraOdds.data]);
 
 
 
@@ -252,7 +296,7 @@ export function MatchesPanel() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by match"
+            placeholder="Search any match, team or league"
             className="w-40 bg-transparent text-[12px] text-xb-on-dark outline-none placeholder:text-xb-on-dark-muted"
           />
           <Search className="h-3.5 w-3.5 text-xb-on-dark-muted" />

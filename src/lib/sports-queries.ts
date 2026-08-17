@@ -169,3 +169,28 @@ export const playerSearchQuery = (sport: Sport, search: string) =>
     staleTime: 10 * 60_000,
     placeholderData: keepPreviousData,
   });
+
+/* ---------------- odds hydration + real provider search ---------------- */
+
+import { getMatchOdds, searchMatches } from "./sports.functions";
+
+/** Fills in prices for rows the bulk odds feed skipped. */
+export const matchOddsQuery = (sport: Sport, ids: string[]) =>
+  queryOptions({
+    queryKey: ["match-odds", sport, [...ids].sort().join(",")],
+    queryFn: () => getMatchOdds({ data: { sport, ids } }),
+    enabled: ids.length > 0,
+    staleTime: 60_000,
+    refetchInterval: 90_000,
+    placeholderData: keepPreviousData,
+  });
+
+/** Searches the whole provider catalogue, not just the loaded list. */
+export const matchSearchQuery = (sport: Sport, term: string) =>
+  queryOptions({
+    queryKey: ["match-search", sport, term.trim().toLowerCase()],
+    queryFn: () => searchMatches({ data: { sport, term } }),
+    enabled: term.trim().length >= 2,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+  });

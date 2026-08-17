@@ -139,3 +139,23 @@ export const getPlayers = createServerFn({ method: "GET" })
     const { fetchPlayers } = await import("./allsports.server");
     return fetchPlayers(data.sport, data);
   });
+
+export const getMatchOdds = createServerFn({ method: "GET" })
+  .inputValidator((data: { sport?: Sport; ids: string[] }) => ({
+    sport: (data.sport ?? "football") as Sport,
+    ids: (data.ids ?? []).map(String).slice(0, 600),
+  }))
+  .handler(async ({ data }) => {
+    const { fetchMatchOdds } = await import("./allsports.server");
+    return fetchMatchOdds(data.sport, data.ids);
+  });
+
+export const searchMatches = createServerFn({ method: "GET" })
+  .inputValidator((data: { sport?: Sport; term: string }) => ({
+    sport: (data.sport ?? "football") as Sport,
+    term: String(data.term ?? "").slice(0, 60),
+  }))
+  .handler(async ({ data }) => {
+    const { searchMatchesEverywhere } = await import("./allsports.server");
+    return searchMatchesEverywhere(data.sport, data.term);
+  });
