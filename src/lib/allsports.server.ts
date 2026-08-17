@@ -170,6 +170,26 @@ function parseOddsNode(sport: Sport, node: unknown): Market[] {
   return [];
 }
 
+/** Merge market feeds without losing outcomes that exist in only one feed. */
+function mergeMarkets(...feeds: Market[][]): Market[] {
+  const merged = new Map<string, Market>();
+  for (const market of feeds.flat()) {
+    const key = market.name.toLowerCase();
+    const previous = merged.get(key);
+    if (!previous) {
+      merged.set(key, market);
+      continue;
+    }
+    const outcomes = new Map(previous.outcomes.map((outcome) => [outcome.label.toLowerCase(), outcome]));
+    for (const outcome of market.outcomes) {
+      const current = outcomes.get(outcome.label.toLowerCase());
+      if (!current || outcome.odd > current.odd) outcomes.set(outcome.label.toLowerCase(), outcome);
+    }
+    merged.set(key, { name: previous.name, outcomes: [...outcomes.values()] });
+  }
+  return [...merged.values()];
+}
+
 async function fetchOdds(
   sport: Sport,
   range: Record<string, string>,
@@ -351,7 +371,7 @@ function mainOdds(sport: Sport, markets: Market[]): MainOdds {
   // Totals: prefer the classic line for the sport, else the first totals market.
   const preferred =
     sport === "football"
-      ? markets.find((m) => /total goals 2\.5/i.test(m.name))
+      ? markets.find((m) => /(total goals|goals over\/under) 2\.5/i.test(m.name))
       : undefined;
   const totals =
     preferred ??
@@ -1059,11 +1079,7 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
       ? fullOddsRes[matchId]
       : {}) as Json,
   );
-  const merged = new Map<string, Market>();
-  for (const mk of [...baseMarkets, ...fullMarkets]) {
-    const prev = merged.get(mk.name);
-    if (!prev || mk.outcomes.length > prev.outcomes.length) merged.set(mk.name, mk);
-  }
+  let markets = mergeMarkets(baseMarkets, fullMarkets);
   // In-play prices (football live odds feed) override/extend the pre-match list.
   const isLiveNow = String(fixture["event_live"] ?? "0") === "1";
   if (isFootball && isLiveNow) {
@@ -1073,9 +1089,8 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
       6_000,
     ).catch(() => null);
     const rows = Array.isArray(liveOdds?.[matchId]) ? (liveOdds[matchId] as Json[]) : [];
-    for (const mk of parseLiveOdds(rows)) merged.set(mk.name, mk);
+    markets = mergeMarkets(markets, parseLiveOdds(rows));
   }
-  const markets = [...merged.values()];
 
   const lineupNode = fixture["lineups"];
   const hasLineups = lineupNode && typeof lineupNode === "object";
@@ -1401,17 +1416,22 @@ export async function fetchOddsForIds(
   const out = new Map<string, Market[]>();
   await pool([...new Set(ids)].slice(0, 250), 12, async (id) => {
     try {
-      const res = await call<Record<string, unknown>>(sport, { met: "Odds", matchId: id }, 60_000);
-      let markets = parseOddsNode(sport, res?.[id] ?? null);
-      if (markets.length === 0) {
-        const full = await call<Record<string, unknown>>(
+      // Basic Odds and FullOdds are complementary: the basic feed can contain
+      // one minor market while FullOdds holds the result and totals prices.
+      // Always request and merge both instead of treating FullOdds as a fallback.
+      const [res, full] = await Promise.all([
+        call<Record<string, unknown>>(sport, { met: "Odds", matchId: id }, 60_000),
+        call<Record<string, unknown>>(
           sport,
           { met: "FullOdds", matchId: id },
           60_000,
-        );
-        const node = full?.[id];
-        if (node && typeof node === "object") markets = parseNestedOdds(node as Json);
-      }
+        ),
+      ]);
+      const fullNode = full?.[id];
+      const markets = mergeMarkets(
+        parseOddsNode(sport, res?.[id] ?? null),
+        fullNode && typeof fullNode === "object" ? parseNestedOdds(fullNode as Json) : [],
+      );
       if (markets.length > 0) out.set(id, markets);
     } catch {
       /* odds are optional */
