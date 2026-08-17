@@ -295,7 +295,7 @@ export function MatchesPanel() {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by match"
+            placeholder="Search any match, team or league"
             className="w-40 bg-transparent text-[12px] text-xb-on-dark outline-none placeholder:text-xb-on-dark-muted"
           />
           <Search className="h-3.5 w-3.5 text-xb-on-dark-muted" />
