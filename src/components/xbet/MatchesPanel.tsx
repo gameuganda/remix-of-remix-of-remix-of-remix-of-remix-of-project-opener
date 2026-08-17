@@ -211,7 +211,8 @@ export function MatchesPanel() {
       baseList
         .filter((m) => m.marketCount === 0)
         .map((m) => m.id)
-        .slice(0, 600),
+        // Nearest kick-offs first: those are the ones bookmakers have priced.
+        .slice(0, 200),
     [baseList],
   );
   const extraOdds = useQuery(matchOddsQuery(sport, missingOddsIds));

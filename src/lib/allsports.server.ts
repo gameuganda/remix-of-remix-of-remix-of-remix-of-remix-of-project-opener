@@ -1399,7 +1399,7 @@ export async function fetchOddsForIds(
   ids: string[],
 ): Promise<Map<string, Market[]>> {
   const out = new Map<string, Market[]>();
-  await pool([...new Set(ids)].slice(0, 600), 12, async (id) => {
+  await pool([...new Set(ids)].slice(0, 250), 12, async (id) => {
     try {
       const res = await call<Record<string, unknown>>(sport, { met: "Odds", matchId: id }, 60_000);
       let markets = parseOddsNode(sport, res?.[id] ?? null);
