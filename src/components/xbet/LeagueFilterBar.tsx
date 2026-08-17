@@ -181,8 +181,15 @@ export function LeagueFilterBar() {
                       return;
                     }
                     const keys = pickKeys(p);
-                    if (keys.length === 0) return;
+                    if (keys.length === 0) {
+                      // The provider may name this competition differently:
+                      // never leave the tile dead — open the whole country.
+                      const country = all.find((l) => p.country?.test(l.country));
+                      if (country) setCountries([country.countryKey]);
+                      return;
+                    }
                     setLeagues(on ? [] : keys);
+
                   }}
                   className={`group relative flex h-11 w-[190px] shrink-0 items-center gap-2 overflow-hidden rounded-md px-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] ring-1 transition-all hover:-translate-y-px ${
                     on
