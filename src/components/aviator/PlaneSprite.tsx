@@ -25,25 +25,25 @@ export function PlaneSprite({
         className="h-full w-full"
         style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.45))" }}
       >
-        {/* Side-on prop: the disc spins about the fuselage axis, so the blades
-            read as a fast vertical flicker rather than a flat pinwheel. */}
-        <g transform="translate(135.55 36.95)">
-          <g>
-            <path fill="#E50539" d={PROP_PATH} transform="translate(-135.55 -33.75)" />
-            {spinning ? (
-              <animateTransform
-                attributeName="transform"
-                type="scale"
-                values="1 1;1 0.12;1 -1;1 -0.12;1 1"
-                dur="0.38s"
-                repeatCount="indefinite"
-                calcMode="linear"
-              />
-            ) : null}
-          </g>
+        {/* Propeller: exact placement from the official sprite —
+            path drawn at translate(0 3.2), so its disc centre sits at
+            (135.55, 36.95). The spin squashes the disc about that exact
+            centre so the hub never moves. */}
+        <g
+          style={{
+            transformOrigin: "135.55px 36.95px",
+            animation: spinning ? "aviator-prop-spin 0.12s linear infinite" : undefined,
+          }}
+        >
+          <path fill="#E50539" d={PROP_PATH} transform="translate(0 3.2)" />
         </g>
         {/* fuselage, wings, tail */}
         <path fill="#E50539" d={BODY_PATH} transform="translate(24.5 34.7)" />
+        <style>{`@keyframes aviator-prop-spin {
+  0%   { transform: scaleY(1); }
+  50%  { transform: scaleY(0.18); }
+  100% { transform: scaleY(1); }
+}`}</style>
       </svg>
     </div>
   );
