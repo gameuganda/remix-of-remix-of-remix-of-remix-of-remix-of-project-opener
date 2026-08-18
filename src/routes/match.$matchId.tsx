@@ -7,13 +7,10 @@ import {
   ArrowLeft,
   ArrowUp,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Lock,
   Play,
   Sparkles,
-  X,
 } from "lucide-react";
 import { Header } from "@/components/xbet/Header";
 import { LeftSidebar } from "@/components/xbet/LeftSidebar";
@@ -26,6 +23,7 @@ import { outcomeLocked, lockReason, type LockableMatch } from "@/lib/live-lock";
 import { useOddsFlash, oddsFlashClass } from "@/lib/use-odds-flash";
 
 import { useBetSlip } from "@/components/xbet/BetSlipContext";
+import { useVideoPlayer, thumbUrl } from "@/components/xbet/VideoPlayerContext";
 import {
   matchDetailsQuery,
   type EventRow,
