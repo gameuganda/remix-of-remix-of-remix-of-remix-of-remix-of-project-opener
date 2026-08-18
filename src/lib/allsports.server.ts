@@ -58,6 +58,14 @@ function rowsOf(res: unknown): Json[] {
   return [];
 }
 
+/**
+ * Fixture date key. Football/basketball/tennis ship `event_date`, cricket ships
+ * `event_date_start`, so every date comparison must accept both.
+ */
+function dateKey(f: Json): string {
+  return String(f["event_date"] ?? f["event_date_start"] ?? "");
+}
+
 /** Current Uganda-local time, as a Date whose UTC fields hold Kampala wall time. */
 function ugNow(): Date {
   return new Date(Date.now() + 3 * 60 * 60_000);
@@ -426,7 +434,7 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
     : (f["away_team_logo"] ?? f["event_away_team_logo"])) as string | null;
   const [homeScore, awayScore] = splitScore(f["event_final_result"]);
   const status = String(f["event_status"] ?? "");
-  const date = String(f["event_date"] ?? f["event_date_start"] ?? "");
+  const date = dateKey(f);
   const time = String(f["event_time"] ?? "");
 
   return {
@@ -605,7 +613,7 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
     if (isEnded(f) || isVoid(f)) return false;
     // A future-dated row can carry a numeric status token that is not a match
     // minute, so in-play is only ever claimed for today's games.
-    if (String(f["event_date"] ?? f["event_date_start"] ?? "") !== ymd(0)) return false;
+    if (dateKey(f) !== ymd(0)) return false;
     if (String(f["event_live"] ?? "0") === "1") return true;
     // Providers also mark in-play games by minute / period status text. The
     // period tokens must be anchored, otherwise "Not Started" matches "ot".
@@ -619,7 +627,7 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
     if (isLive(f)) return false;
     if (splitScore(f["event_final_result"])[0] !== null) return false;
     const start = Date.parse(
-      `${f["event_date"] ?? f["event_date_start"]}T${f["event_time"] ?? "00:00"}:00Z`,
+      `${dateKey(f)}T${f["event_time"] ?? "00:00"}:00Z`,
     );
     return !Number.isFinite(start) || start >= nowMs - 5 * 60_000;
   };
@@ -644,7 +652,7 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
   // "Today" must never leak tomorrow's fixtures, even if the feed widens the window.
   if (scope === "today" || scope === "boosted") {
     const todayKey = ymd(0);
-    filtered = filtered.filter((f) => String(f["event_date"] ?? "") === todayKey);
+    filtered = filtered.filter((f) => dateKey(f) === todayKey);
   }
 
   // Top Bets = the curated shortlist of elite competitions.
@@ -677,8 +685,8 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
   }
 
   const sorted = filtered.sort((a, b) => {
-    const ka = `${a["event_date"]}${a["event_time"]}`;
-    const kb = `${b["event_date"]}${b["event_time"]}`;
+    const ka = `${dateKey(a)}${a["event_time"]}`;
+    const kb = `${dateKey(b)}${b["event_time"]}`;
     return scope === "results" ? kb.localeCompare(ka) : ka.localeCompare(kb);
   });
 
@@ -750,7 +758,7 @@ export async function fetchLiveCounts(): Promise<Record<Sport, number>> {
   // badge promises matches the page cannot show.
   const rowIsLive = (f: Json) => {
     const status = String(f["event_status"] ?? "");
-    if (String(f["event_date"] ?? "") !== ymd(0)) return false;
+    if (dateKey(f) !== ymd(0)) return false;
     if (FINISHED_RE.test(status) || VOID_RE.test(status)) return false;
     if (String(f["event_live"] ?? "0") === "1") return true;
     return /^\d+|half|^ht$|break|set \d|quarter|q\d|^ot$|pen/i.test(status);
@@ -1520,7 +1528,7 @@ export async function searchMatchesEverywhere(sport: Sport, term: string): Promi
       const status = String(f["event_status"] ?? "");
       if (FINISHED_RE.test(status) || VOID_RE.test(status)) return false;
       const start = Date.parse(
-        `${f["event_date"] ?? f["event_date_start"]}T${f["event_time"] ?? "00:00"}:00Z`,
+        `${dateKey(f)}T${f["event_time"] ?? "00:00"}:00Z`,
       );
       return !Number.isFinite(start) || start >= nowMs - 3 * 60 * 60_000;
     })
@@ -1539,7 +1547,7 @@ export async function searchMatchesEverywhere(sport: Sport, term: string): Promi
       return hay.includes(needle);
     })
     .sort((a, b) =>
-      `${a["event_date"]}${a["event_time"]}`.localeCompare(`${b["event_date"]}${b["event_time"]}`),
+      `${dateKey(a)}${a["event_time"]}`.localeCompare(`${dateKey(b)}${b["event_time"]}`),
     )
     .slice(0, 300);
 
