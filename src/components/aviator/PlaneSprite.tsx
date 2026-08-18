@@ -30,7 +30,7 @@ export function PlaneSprite({
           style={{
             transformBox: "view-box",
             transformOrigin: "135.5px 34.5px",
-            animation: spinning ? "propeller-spin 0.35s linear infinite" : "none",
+            animation: spinning ? "plane-prop-spin 0.32s linear infinite" : "none",
           }}
         >
           <path fill="#E50539" d={PROP_PATH} transform="translate(0 3.2)" />
