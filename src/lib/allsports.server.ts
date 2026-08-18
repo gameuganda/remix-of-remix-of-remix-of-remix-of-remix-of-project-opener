@@ -22,10 +22,8 @@ async function call<T>(
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < ttlMs) return hit.data as T;
 
-  // Configured directly in the site (not via an environment variable).
-  const apiKey =
-    process.env["ALLSPORTS_API_KEY"] ??
-    "235d3ade0664feb00d281d00a83bf7c7786a0d3d5d5dc6de8f40859f240ca9a4";
+  // Admin-editable key (Admin → Settings), env override, then built-in default.
+  const apiKey = await allsportsApiKey();
 
   const url = new URL(`https://apiv2.allsportsapi.com/${sport}/`);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
