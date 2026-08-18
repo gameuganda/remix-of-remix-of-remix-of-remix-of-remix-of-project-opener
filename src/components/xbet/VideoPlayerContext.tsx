@@ -228,7 +228,7 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
                 type="button"
                 aria-label={playing ? "Pause" : "Play"}
                 onClick={() => post(playing ? "pauseVideo" : "playVideo")}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-xb-text-muted transition hover:bg-xb-blue hover:text-xb-on-dark"
+                className="bp-glass-btn hover:bp-glass-btn-hover flex h-6 w-6 shrink-0 items-center justify-center text-xb-text active:scale-95"
               >
                 {playing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
               </button>
@@ -239,7 +239,7 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
                   post(muted ? "unMute" : "mute");
                   setMuted((m) => !m);
                 }}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-xb-text-muted transition hover:bg-xb-blue hover:text-xb-on-dark"
+                className="bp-glass-btn hover:bp-glass-btn-hover flex h-6 w-6 shrink-0 items-center justify-center text-xb-text active:scale-95"
               >
                 {muted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
               </button>
