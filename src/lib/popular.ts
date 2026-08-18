@@ -55,6 +55,11 @@ const POPULAR_LEAGUES: Record<Sport, RegExp[]> = {
     /^atp/i,
     /^wta/i,
   ],
+  cricket: [
+    /world cup|champions trophy/i,
+    /premier league|big bash|the hundred/i,
+    /test|odi|t20/i,
+  ],
 };
 
 /** Lower is more important. Non-popular entries get a large rank. */

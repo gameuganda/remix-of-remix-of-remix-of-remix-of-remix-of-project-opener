@@ -14,6 +14,7 @@ const FALLBACK: Record<Sport, RegExp> = {
     /premier league|la liga|serie a|bundesliga|ligue 1|champions league|europa league|conference league|world cup|euro|copa|nations league|eredivisie|primeira liga|mls|saudi|caf|afcon|uganda/i,
   basketball: /\bnba\b|euroleague|ncaa|acb|eurocup|bbl|wnba/i,
   tennis: /atp|wta|grand slam|australian open|roland garros|wimbledon|us open|masters/i,
+  cricket: /world cup|champions trophy|premier league|big bash|the hundred|test|odi|t20/i,
 };
 
 function fallbackKeys(candidates: LeagueCandidate[], sport: Sport, limit: number) {

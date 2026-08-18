@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): Partial<HomeSearch> => {
     const out: Partial<HomeSearch> = {};
     const sport = search["sport"];
-    if (sport === "football" || sport === "basketball" || sport === "tennis") out.sport = sport;
+    if (sport === "football" || sport === "basketball" || sport === "tennis" || sport === "cricket") out.sport = sport;
     if (Number(search["league"]) > 0) out.league = Number(search["league"]);
     if (Number(search["country"]) > 0) out.country = Number(search["country"]);
     return out;

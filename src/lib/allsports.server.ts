@@ -9,7 +9,7 @@ import { allsportsApiKey } from "./allsports-key.server";
 type Json = Record<string, unknown>;
 
 
-export const SPORTS = ["football", "basketball", "tennis"] as const;
+export const SPORTS = ["football", "basketball", "tennis", "cricket"] as const;
 export type Sport = (typeof SPORTS)[number];
 
 const cache = new Map<string, { at: number; data: unknown }>();
@@ -426,7 +426,7 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
     : (f["away_team_logo"] ?? f["event_away_team_logo"])) as string | null;
   const [homeScore, awayScore] = splitScore(f["event_final_result"]);
   const status = String(f["event_status"] ?? "");
-  const date = String(f["event_date"] ?? "");
+  const date = String(f["event_date"] ?? f["event_date_start"] ?? "");
   const time = String(f["event_time"] ?? "");
 
   return {
@@ -475,6 +475,7 @@ const TOP_BETS: Record<Sport, RegExp> = {
     /premier league|laliga|la liga|serie a|bundesliga|ligue 1|eredivisie|primeira liga|champions league|europa league|conference league|uefa super cup|efl cup|carabao|copa libertadores|copa sudamericana|brasileir|serie b|liga profesional|primera divisi|primera a|division profesional|copa do brasil|leagues cup|club friendlies|clubs friendlies|friendlies/i,
   basketball: /\bnba\b|euroleague|eurocup|acb|\bbbl\b/i,
   tennis: /atp|wta|grand slam|australian open|roland garros|wimbledon|us open|masters/i,
+  cricket: /world cup|champions trophy|premier league|big bash|the hundred|test|odi|t20/i,
 };
 
 export type MatchQuery = {
@@ -528,13 +529,20 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
     return out;
   };
 
+  // Upcoming is always requested through the end of the current calendar
+  // year. This keeps long-range fixtures and every price already published by
+  // the provider visible (for example August through December league games).
+  const endOfYear = Math.max(
+    0,
+    Math.ceil((Date.UTC(ugNow().getUTCFullYear(), 11, 31) - ugNow().getTime()) / 86_400_000),
+  );
   const ranges =
     scope === "today" || scope === "live" || scope === "boosted"
       ? [{ from: ymd(0), to: ymd(0) }]
       : scope === "upcoming" || scope === "topbets"
         ? // A filtered list must show everything the competition has scheduled,
           // however far out that is.
-          chunks(0, hasFilter ? 120 : 60)
+          chunks(0, endOfYear)
         : chunks(hasFilter ? -60 : -7, 0);
 
   const combos = variants.flatMap((v) => ranges.map((range) => ({ ...v, ...range })));
@@ -597,7 +605,7 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
     if (isEnded(f) || isVoid(f)) return false;
     // A future-dated row can carry a numeric status token that is not a match
     // minute, so in-play is only ever claimed for today's games.
-    if (String(f["event_date"] ?? "") !== ymd(0)) return false;
+    if (String(f["event_date"] ?? f["event_date_start"] ?? "") !== ymd(0)) return false;
     if (String(f["event_live"] ?? "0") === "1") return true;
     // Providers also mark in-play games by minute / period status text. The
     // period tokens must be anchored, otherwise "Not Started" matches "ot".
@@ -610,7 +618,9 @@ export async function fetchMatches(q: MatchQuery): Promise<Match[]> {
     if (!notPlayed(f)) return false;
     if (isLive(f)) return false;
     if (splitScore(f["event_final_result"])[0] !== null) return false;
-    const start = Date.parse(`${f["event_date"]}T${f["event_time"] ?? "00:00"}:00Z`);
+    const start = Date.parse(
+      `${f["event_date"] ?? f["event_date_start"]}T${f["event_time"] ?? "00:00"}:00Z`,
+    );
     return !Number.isFinite(start) || start >= nowMs - 5 * 60_000;
   };
 
@@ -1462,7 +1472,11 @@ export async function searchMatchesEverywhere(sport: Sport, term: string): Promi
   const needle = q.toLowerCase();
 
   const rows: Json[] = [];
-  const ranges = dayChunks(-2, 60);
+  const endOfYear = Math.max(
+    60,
+    Math.ceil((Date.UTC(ugNow().getUTCFullYear(), 11, 31) - ugNow().getTime()) / 86_400_000),
+  );
+  const ranges = dayChunks(-2, endOfYear);
 
   // 1) Teams / players matching the term -> their own fixture list.
   const teams = await fetchTeams(sport, { search: q }).catch(() => []);
@@ -1505,7 +1519,9 @@ export async function searchMatchesEverywhere(sport: Sport, term: string): Promi
     .filter((f) => {
       const status = String(f["event_status"] ?? "");
       if (FINISHED_RE.test(status) || VOID_RE.test(status)) return false;
-      const start = Date.parse(`${f["event_date"]}T${f["event_time"] ?? "00:00"}:00Z`);
+      const start = Date.parse(
+        `${f["event_date"] ?? f["event_date_start"]}T${f["event_time"] ?? "00:00"}:00Z`,
+      );
       return !Number.isFinite(start) || start >= nowMs - 3 * 60 * 60_000;
     })
     .filter((f) => {
