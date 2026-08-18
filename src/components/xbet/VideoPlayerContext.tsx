@@ -216,18 +216,8 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
                 onClick={() => post(playing ? "pauseVideo" : "playVideo")}
                 className="absolute inset-0 h-full w-full cursor-default bg-transparent"
               />
-              {!showVideo ? (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
-                  <span className="relative flex h-10 w-10 items-center justify-center">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-xb-blue/30" />
-                    <span className="absolute inset-0 animate-spin rounded-full border-2 border-xb-blue/25 border-t-xb-blue" />
-                    <Play className="h-4 w-4 text-xb-blue" />
-                  </span>
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-xb-text-muted">
-                    Loading stream
-                  </span>
-                </div>
-              ) : null}
+              {!showVideo ? <PlayerLoader /> : null}
+
             </div>
 
             {/* our own control bar */}
