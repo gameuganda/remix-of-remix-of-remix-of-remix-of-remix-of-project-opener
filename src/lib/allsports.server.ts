@@ -268,16 +268,37 @@ async function fetchLiveOdds(
 
 /* ---------------- normalisation ---------------- */
 
-export type MainOdds = {
-  home: number | null;
-  draw: number | null;
-  away: number | null;
-  over: number | null;
-  under: number | null;
-  bttsYes: number | null;
-  bttsNo: number | null;
-  line: string;
+export type { MainOdds } from "./allsports.server-types";
+import type { MainOdds } from "./allsports.server-types";
+import { derivedMainOdds, isUnpriced } from "./derived-odds";
+
+/** Sports where a fixture can end level, so the X column is meaningful. */
+const DRAW_SPORTS: Record<string, boolean> = {
+  football: true,
+  cricket: false,
+  basketball: false,
+  tennis: false,
 };
+
+/**
+ * Main-market prices for a fixture, falling back to derived pricing whenever
+ * the provider publishes no usable market. Keeps every playable fixture
+ * bettable instead of showing an empty row.
+ */
+function resolvedOdds(
+  sport: Sport,
+  markets: Market[],
+  fixture: { id: string; home: string; away: string; finished: boolean },
+): MainOdds {
+  const real = mainOdds(sport, markets);
+  if (!isUnpriced(real) || fixture.finished || !fixture.id) return real;
+  return derivedMainOdds({
+    id: fixture.id,
+    home: fixture.home,
+    away: fixture.away,
+    drawPossible: DRAW_SPORTS[sport] ?? true,
+  });
+}
 
 export type PeriodScore = { label: string; home: string; away: string };
 
