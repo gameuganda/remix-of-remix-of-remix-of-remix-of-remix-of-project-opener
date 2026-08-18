@@ -1074,10 +1074,12 @@ async function youtubeVideos(query: string, limit = 4): Promise<VideoItem[]> {
       const id = m[1]!;
       if (seen.has(id)) continue;
       seen.add(id);
-      out.push({
-        title: (m[2] ?? "Highlights").replace(/\\u0026/g, "&").replace(/\\"/g, '"'),
-        url: `https://www.youtube.com/watch?v=${id}`,
-      });
+      const raw = m[2] ?? "Highlights";
+      const title = raw
+        .replace(/\\u([\dA-Fa-f]{4})/g, (_s, h: string) => String.fromCharCode(parseInt(h, 16)))
+        .replace(/\\(.)/g, "$1")
+        .trim();
+      out.push({ title: title || "Highlights", url: `https://www.youtube.com/watch?v=${id}` });
     }
     return out;
   } catch {
