@@ -258,7 +258,11 @@ export function MatchesPanel() {
     if (byId.size === 0) return pageList;
     return pageList.map((m) => {
       const p = byId.get(m.id);
-      return p ? { ...m, odds: p.odds, marketCount: p.marketCount } : m;
+      if (!p) return m;
+      // Never trade a priced row for an empty one: the row may already be
+      // showing derived prices for a fixture the provider does not price.
+      if (p.odds.home === null && p.odds.away === null) return m;
+      return { ...m, odds: p.odds, marketCount: Math.max(p.marketCount, m.marketCount) };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageList, oddsResults.map((r) => r.dataUpdatedAt).join(",")]);
