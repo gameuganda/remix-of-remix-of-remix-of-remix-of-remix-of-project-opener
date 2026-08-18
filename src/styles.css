@@ -524,3 +524,24 @@
     transform: translateX(320%);
   }
 }
+
+@keyframes bp-letter-drop {
+  0% {
+    transform: translateY(-70%) scale(0.9);
+    opacity: 0;
+    filter: blur(6px);
+  }
+  55% {
+    transform: translateY(8%) scale(1.04);
+    opacity: 1;
+    filter: blur(0);
+  }
+  75% {
+    transform: translateY(-4%) scale(0.99);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}

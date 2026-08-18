@@ -1,9 +1,22 @@
 /**
  * BET PLUS+ branded player loader.
- * Soft, milky macOS-style glass panel with a shimmering wordmark and a
- * breathing play badge — shown while a stream is buffering.
+ * Soft, milky macOS-style glass backdrop with the site wordmark dropping in
+ * letter by letter — shown while a stream is buffering.
  */
+const LETTERS: Array<{ ch: string; blue: boolean }> = [
+  { ch: "B", blue: false },
+  { ch: "E", blue: false },
+  { ch: "T", blue: false },
+  { ch: "P", blue: true },
+  { ch: "L", blue: true },
+  { ch: "U", blue: true },
+  { ch: "S", blue: true },
+  { ch: "+", blue: true },
+];
+
 export function PlayerLoader({ label = "Loading stream" }: { label?: string }) {
+  const cycle = LETTERS.length * 0.12 + 1.5;
+
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden bg-black">
       {/* milky drifting light */}
@@ -16,34 +29,31 @@ export function PlayerLoader({ label = "Loading stream" }: { label?: string }) {
         }}
       />
 
-      <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 px-4">
-        {/* play badge */}
-        <span className="relative flex h-12 w-12 items-center justify-center">
-          <span
-            className="absolute inset-0 rounded-full bg-white/25 blur-md"
-            style={{ animation: "bp-breathe 2.2s ease-in-out infinite" }}
-          />
-          <span className="bp-glass-btn absolute inset-0" />
-          <svg viewBox="0 0 24 24" className="relative h-4 w-4 fill-white/90" aria-hidden="true">
-            <path d="M8 5.5v13l11-6.5-11-6.5z" />
-          </svg>
-        </span>
-
-        {/* wordmark */}
-        <span className="flex items-baseline gap-1 text-lg font-extrabold tracking-[0.14em]">
-          <span className="bp-wordmark-shimmer">BET PLUS</span>
-          <span className="text-xb-blue-light">+</span>
+      <div className="relative flex h-full w-full flex-col items-center justify-center gap-5 px-4">
+        {/* wordmark — letters drop in one by one */}
+        <span className="flex items-baseline font-xb text-4xl font-black tracking-tight drop-shadow-[0_6px_24px_rgba(0,0,0,0.6)] sm:text-6xl">
+          {LETTERS.map((l, i) => (
+            <span
+              key={`${l.ch}-${i}`}
+              className={`inline-block ${l.blue ? "text-xb-blue-light" : "text-xb-on-dark"}`}
+              style={{
+                animation: `bp-letter-drop ${cycle}s cubic-bezier(0.22,1.2,0.36,1) ${i * 0.12}s infinite`,
+              }}
+            >
+              {l.ch}
+            </span>
+          ))}
         </span>
 
         {/* progress shimmer */}
-        <span className="relative h-[3px] w-40 overflow-hidden rounded-full bg-white/10">
+        <span className="relative h-[3px] w-48 overflow-hidden rounded-full bg-white/10">
           <span
-            className="absolute inset-y-0 w-1/3 rounded-full bg-white/70"
+            className="absolute inset-y-0 w-1/3 rounded-full bg-xb-blue-light"
             style={{ animation: "bp-slide 1.6s ease-in-out infinite" }}
           />
         </span>
 
-        <span className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-white/55">
+        <span className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-white/55">
           {label}
           <span className="flex gap-0.5">
             {[0, 1, 2].map((i) => (
