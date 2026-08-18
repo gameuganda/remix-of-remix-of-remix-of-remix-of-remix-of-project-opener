@@ -39,7 +39,7 @@ export function PlayerLoader({ label = "Loading stream" }: { label?: string }) {
         <span className="relative h-[3px] w-40 overflow-hidden rounded-full bg-white/10">
           <span
             className="absolute inset-y-0 w-1/3 rounded-full bg-white/70"
-            style={{ animation: "bp-shimmer 1.6s ease-in-out infinite" }}
+            style={{ animation: "bp-slide 1.6s ease-in-out infinite" }}
           />
         </span>
 

@@ -515,3 +515,12 @@
   color: transparent;
   animation: bp-shimmer 2.4s linear infinite;
 }
+
+@keyframes bp-slide {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
