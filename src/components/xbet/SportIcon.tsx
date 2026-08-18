@@ -6,7 +6,18 @@ import type { Sport } from "@/lib/sports-types";
 export function SportGlyph({ sport, className = "" }: { sport: Sport; className?: string }) {
   if (sport === "basketball") return <BasketballIcon className={className} />;
   if (sport === "tennis") return <TennisIcon className={className} />;
+  if (sport === "cricket") return <CricketIcon className={className} />;
   return <SportIcon className={className} />;
+}
+
+function CricketIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="m5 20 9.7-9.7M12.8 8.4l2.8 2.8M4 19l1 1M15.2 4.7l4.1 4.1-2.2 2.2-4.1-4.1z" />
+      <circle cx="18.5" cy="17.5" r="2.5" />
+      <path d="M17.1 15.5c.2 1.5 1.2 2.5 2.8 2.8" />
+    </svg>
+  );
 }
 
 /** Sport (ball) icon — inherits currentColor so it themes like lucide icons. */
