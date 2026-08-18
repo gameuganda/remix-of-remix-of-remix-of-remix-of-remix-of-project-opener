@@ -297,7 +297,7 @@ function VirtualPageInner() {
         )}
 
 
-        <div className="flex min-h-0 w-full flex-1 flex-col gap-1.5 overflow-y-auto pb-2 lg:grid lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(260px,22%)] lg:overflow-hidden lg:pb-0">
+        <div className="flex min-h-0 w-full flex-1 flex-col gap-1.5 overflow-y-auto pb-24 lg:grid lg:grid-cols-[repeat(3,minmax(0,1fr))_minmax(260px,22%)] lg:overflow-hidden lg:pb-0">
           {matches.length === 0 && offer.isError && (
             <div className="col-span-full flex items-center justify-center gap-2 rounded-lg bg-xb-panel py-10 text-[12px] text-xb-text-muted">
               <AlertTriangle className="h-4 w-4 text-xb-red" />
@@ -313,7 +313,7 @@ function VirtualPageInner() {
           {matches.map((m, idx) => (
             <section
               key={m.id}
-              className={`flex min-h-0 flex-col overflow-hidden rounded-lg border bg-xb-panel shadow-sm ${
+              className={`flex min-h-0 shrink-0 flex-col overflow-hidden rounded-lg border bg-xb-panel pb-1 shadow-sm lg:shrink ${
                 idx === 0 ? "border-xb-blue" : "border-xb-line"
               } ${idx === activeIdx ? "" : "hidden lg:flex"}`}
 
@@ -330,13 +330,14 @@ function VirtualPageInner() {
                 <span className="rounded bg-black/20 px-1 text-[9px] uppercase">{m.league}</span>
               </div>
 
-              {m.groups.map((g) => (
-                <div key={`${m.id}-${g.key}`} className="flex flex-1 flex-col">
-                  <GroupTitle>{g.label}</GroupTitle>
+              {m.groups.map((g, gi) => (
+                <div key={`${m.id}-${g.key}`} className="flex flex-col lg:flex-1">
+                  {m.groups[gi - 1]?.label !== g.label && <GroupTitle>{g.label}</GroupTitle>}
                   <div
-                    className="grid auto-rows-fr flex-1 gap-1 p-1"
+                    className="grid gap-1 p-1 lg:h-full lg:flex-1 lg:auto-rows-fr"
                     style={{ gridTemplateColumns: `repeat(${columnsFor(g)}, minmax(0, 1fr))` }}
                   >
+
                     {g.odds.map((o) => {
                       const type = g.key === "10" ? "OTHER" : g.type;
                       const pick = `${type}|${o.name}`;
