@@ -56,10 +56,27 @@ export function crashPointFor(seed: string): number {
   const r = unitRandom(seed);
   if (r < INSTANT_BUST_CHANCE) return 1;
   const u = (r - INSTANT_BUST_CHANCE) / (1 - INSTANT_BUST_CHANCE);
-  const raw = (1 - HOUSE_EDGE) / Math.max(1 - u, 1e-9);
-  const value = Math.floor(raw * 100) / 100;
-  if (!Number.isFinite(value)) return 1;
-  return Math.min(Math.max(value, 1), MAX_CRASH_POINT);
+
+  // Weighted bands: most rounds bust in the 1.00-1.99 range, big multipliers stay rare.
+  const bands: Array<[number, number, number]> = [
+    [0.7, 1, 2],
+    [0.9, 2, 4],
+    [0.98, 4, 10],
+    [1, 10, MAX_CRASH_POINT],
+  ];
+  let lower = 0;
+  for (const [cut, min, max] of bands) {
+    if (u < cut) {
+      const t = (u - lower) / Math.max(cut - lower, 1e-9);
+      // Skew within the band so the low end of each band is the likeliest.
+      const raw = min + (max - min) * t * t;
+      const value = Math.floor(raw * 100) / 100;
+      if (!Number.isFinite(value)) return 1;
+      return Math.min(Math.max(value, 1), MAX_CRASH_POINT);
+    }
+    lower = cut;
+  }
+  return 1;
 }
 
 const cache = new Map<number, EngineRound[]>();

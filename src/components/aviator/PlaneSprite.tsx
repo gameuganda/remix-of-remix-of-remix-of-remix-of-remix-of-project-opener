@@ -25,19 +25,22 @@ export function PlaneSprite({
         className="h-full w-full"
         style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.45))" }}
       >
-        {/* SVG-native rotation keeps the propeller reliable after deployment. */}
-        <g>
-          <path fill="#E50539" d={PROP_PATH} transform="translate(0 3.2)" />
-          {spinning ? (
-            <animateTransform
-              attributeName="transform"
-              type="rotate"
-              from="0 135.5 37.7"
-              to="360 135.5 37.7"
-              dur="0.18s"
-              repeatCount="indefinite"
-            />
-          ) : null}
+        {/* Side-on prop: the disc spins about the fuselage axis, so the blades
+            read as a fast vertical flicker rather than a flat pinwheel. */}
+        <g transform="translate(135.5 37.7)">
+          <g>
+            <path fill="#E50539" d={PROP_PATH} transform="translate(-135.5 -34.5)" />
+            {spinning ? (
+              <animateTransform
+                attributeName="transform"
+                type="scale"
+                values="1 1;1 0.12;1 -1;1 -0.12;1 1"
+                dur="0.22s"
+                repeatCount="indefinite"
+                calcMode="linear"
+              />
+            ) : null}
+          </g>
         </g>
         {/* fuselage, wings, tail */}
         <path fill="#E50539" d={BODY_PATH} transform="translate(24.5 34.7)" />
