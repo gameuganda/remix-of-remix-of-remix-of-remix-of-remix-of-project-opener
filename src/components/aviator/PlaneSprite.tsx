@@ -35,7 +35,12 @@ export function PlaneSprite({
             willChange: "transform",
           }}
         >
-          <path fill="#E50539" d={PROP_PATH} transform="translate(0 3.2)" />
+          <path
+            fill="#E50539"
+            d={PROP_PATH}
+            transform="translate(0 3.2) scaleY(-1)"
+            style={{ transformOrigin: "135.55px 36.95px" }}
+          />
         </g>
         {/* fuselage, wings, tail */}
         <path fill="#E50539" d={BODY_PATH} transform="translate(24.5 34.7)" />
