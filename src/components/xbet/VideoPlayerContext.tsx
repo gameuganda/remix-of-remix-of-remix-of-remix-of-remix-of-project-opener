@@ -77,6 +77,7 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
   const [entered, setEntered] = useState(false);
   const [ready, setReady] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const [muted, setMuted] = useState(false);
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -101,6 +102,7 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setReady(false);
     setPlaying(false);
+    setRevealed(false);
     setTime(0);
     setDuration(0);
   }, [clip?.url]);
@@ -128,7 +130,10 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
       const info = data?.info;
       if (data?.event === "onReady" || info) setReady(true);
       if (!info) return;
-      if (typeof info.playerState === "number") setPlaying(info.playerState === 1);
+      if (typeof info.playerState === "number") {
+        setPlaying(info.playerState === 1);
+        if (info.playerState === 1) setRevealed(true);
+      }
       if (typeof info.currentTime === "number") setTime(info.currentTime);
       if (typeof info.duration === "number" && info.duration > 0) setDuration(info.duration);
       if (typeof info.muted === "boolean") setMuted(info.muted);
@@ -143,11 +148,14 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
       "*",
     );
     // safety: never leave the loader up forever
-    setTimeout(() => setReady(true), 2500);
+    setTimeout(() => {
+      setReady(true);
+      setRevealed(true);
+    }, 2500);
   }, []);
 
   const value = useMemo(() => ({ open }), [open]);
-  const showVideo = ready && playing;
+  const showVideo = ready && revealed;
 
   return (
     <VideoPlayerCtx.Provider value={value}>
