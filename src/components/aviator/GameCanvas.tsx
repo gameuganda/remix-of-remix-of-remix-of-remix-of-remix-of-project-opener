@@ -4,10 +4,8 @@ import { PlaneSprite } from "./PlaneSprite";
 import { BETTING_SECONDS, GROWTH_RATE, formatMultiplier, type Phase } from "@/lib/aviator/game";
 
 /** Multiplier tier colours (r,g,b). */
-function trailColor(multiplier: number) {
-  if (multiplier < 2) return "52,179,241";
-  if (multiplier < 10) return "145,62,248";
-  return "192,23,180";
+function trailColor(_multiplier: number) {
+  return "228,5,57";
 }
 
 type Props = {
@@ -175,8 +173,8 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
 
         curve(true);
         const fill = context.createLinearGradient(0, padTop, 0, originY);
-        fill.addColorStop(0, `rgba(${trail},0.5)`);
-        fill.addColorStop(1, `rgba(${trail},0.04)`);
+        fill.addColorStop(0, `rgba(${trail},0.85)`);
+        fill.addColorStop(1, `rgba(${trail},0.35)`);
         context.fillStyle = fill;
         context.fill();
 
@@ -193,7 +191,7 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
       if (plane) {
         // The plotted point meets the lower centre of the tail while the
         // aircraft remains level, matching the original Aviator artwork.
-        const anchor = "translate(-2%, -63%)";
+        const anchor = "translate(-3%, -74%)";
 
         if (currentPhase === "crashed") {
           const gone = Math.min(1, (time - crashAt) / 900);
