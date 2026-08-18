@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { PlayerLoader } from "@/components/xbet/PlayerLoader";
+
 import {
   ChevronLeft,
   ChevronRight,
