@@ -3,7 +3,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUp, ArrowDown, Loader2, Lock, Play, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Lock,
+  Play,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { Header } from "@/components/xbet/Header";
 import { LeftSidebar } from "@/components/xbet/LeftSidebar";
 import { RightSidebar } from "@/components/xbet/RightSidebar";
@@ -1014,15 +1025,113 @@ function LineupsTab({
   );
 }
 
-function embedUrl(url: string): string | null {
-  const yt = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{6,})/.exec(url);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
-  const dm = /dailymotion\.com\/video\/([\w]+)/.exec(url);
-  if (dm) return `https://www.dailymotion.com/embed/video/${dm[1]}`;
+/** YouTube / Dailymotion id extraction, used for both thumbnail and player. */
+function videoSource(url: string): { kind: "yt" | "dm" | "raw"; id: string } {
+  const yt = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/.exec(url);
+  if (yt?.[1]) return { kind: "yt", id: yt[1] };
+  const dm = /dailymotion\.com\/(?:video|embed\/video)\/(\w+)/.exec(url);
+  if (dm?.[1]) return { kind: "dm", id: dm[1] };
+  return { kind: "raw", id: url };
+}
+
+function playerUrl(url: string): string {
+  const s = videoSource(url);
+  // youtube-nocookie avoids the "service unavailable" account/consent wall the
+  // standard embed host throws inside sandboxed frames.
+  if (s.kind === "yt")
+    return `https://www.youtube-nocookie.com/embed/${s.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
+  if (s.kind === "dm") return `https://www.dailymotion.com/embed/video/${s.id}?autoplay=1`;
+  return url;
+}
+
+function thumbUrl(url: string): string | null {
+  const s = videoSource(url);
+  if (s.kind === "yt") return `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`;
+  if (s.kind === "dm") return `https://www.dailymotion.com/thumbnail/video/${s.id}`;
   return null;
 }
 
+/**
+ * Small floating player. Stays inside the app (no navigation away), sits above
+ * the page without a backdrop so nothing behind it is dimmed or blurred.
+ */
+function FloatingPlayer({
+  videos,
+  index,
+  onIndex,
+  onClose,
+}: {
+  videos: VideoItem[];
+  index: number;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const video = videos[index];
+  if (!video) return null;
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[80] flex items-end justify-end p-3 sm:p-5">
+      <div className="pointer-events-auto w-full max-w-[420px] overflow-hidden rounded-2xl bg-xb-panel shadow-2xl ring-1 ring-xb-line">
+        <div className="flex items-center gap-2 border-b border-xb-line px-3 py-2">
+          <Play className="h-3.5 w-3.5 shrink-0 text-xb-blue" />
+          <span className="flex-1 truncate text-[12px] font-semibold text-xb-text">
+            {video.title}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close video"
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text-muted transition hover:bg-xb-panel-alt hover:text-xb-text"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+        <div className="aspect-video w-full bg-black">
+          <iframe
+            key={video.url}
+            src={playerUrl(video.url)}
+            title={video.title}
+            loading="lazy"
+            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+            allowFullScreen
+            // Player may script itself, but can never navigate the app away.
+            sandbox="allow-scripts allow-same-origin allow-presentation"
+            className="h-full w-full"
+          />
+        </div>
+        {videos.length > 1 ? (
+          <div className="flex items-center justify-between gap-2 px-3 py-2">
+            <span className="text-[11px] text-xb-text-muted">
+              Clip {index + 1} of {videos.length} · if a clip is blocked by the rights holder, try
+              the next one
+            </span>
+            <span className="flex gap-1">
+              <button
+                type="button"
+                aria-label="Previous clip"
+                onClick={() => onIndex((index - 1 + videos.length) % videos.length)}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next clip"
+                onClick={() => onIndex((index + 1) % videos.length)}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function VideosTab({ videos }: { videos: VideoItem[] }) {
+  const [active, setActive] = useState<number | null>(null);
+
   if (videos.length === 0) {
     return (
       <div className="px-3 py-6 text-center text-[12px] text-xb-text-muted">
@@ -1030,47 +1139,50 @@ function VideosTab({ videos }: { videos: VideoItem[] }) {
       </div>
     );
   }
+
   return (
-    <div className="grid gap-3 p-3 md:grid-cols-2">
-      {videos.map((v, i) => {
-        const embed = embedUrl(v.url);
-        return (
-          <div key={i} className="overflow-hidden rounded-xl bg-xb-odds ring-1 ring-xb-line">
-            {embed ? (
-              <div className="aspect-video w-full bg-black">
-                <iframe
-                  src={embed}
-                  title={v.title}
-                  loading="lazy"
-                  allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                  className="h-full w-full"
-                />
-              </div>
-            ) : (
-              <a
-                href={v.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex aspect-video items-center justify-center bg-xb-panel-alt"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-xb-blue text-xb-on-dark">
-                  <Play className="h-5 w-5" />
-                </span>
-              </a>
-            )}
-            <a
-              href={v.url}
-              target="_blank"
-              rel="noreferrer"
-              className="block truncate px-3 py-2 text-[12px] font-medium text-xb-text hover:text-xb-blue"
+    <>
+      <div className="grid gap-3 p-3 md:grid-cols-2">
+        {videos.map((v, i) => {
+          const thumb = thumbUrl(v.url);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActive(i)}
+              className="group overflow-hidden rounded-xl bg-xb-odds text-left ring-1 ring-xb-line transition hover:ring-xb-blue"
             >
-              {v.title}
-            </a>
-          </div>
-        );
-      })}
-    </div>
+              <div className="relative aspect-video w-full overflow-hidden bg-xb-panel-alt">
+                {thumb ? (
+                  <img
+                    src={thumb}
+                    alt={v.title}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                  />
+                ) : null}
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-xb-blue/90 text-xb-on-dark shadow-lg transition group-hover:scale-110">
+                    <Play className="h-5 w-5 translate-x-[1px]" />
+                  </span>
+                </span>
+              </div>
+              <span className="block truncate px-3 py-2 text-[12px] font-medium text-xb-text group-hover:text-xb-blue">
+                {v.title}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {active !== null ? (
+        <FloatingPlayer
+          videos={videos}
+          index={active}
+          onIndex={setActive}
+          onClose={() => setActive(null)}
+        />
+      ) : null}
+    </>
   );
 }
 
