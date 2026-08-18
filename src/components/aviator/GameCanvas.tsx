@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 
-import cloudsAsset from "@/assets/aviator/clouds.png.asset.json";
 import { PlaneSprite } from "./PlaneSprite";
 import { BETTING_SECONDS, GROWTH_RATE, formatMultiplier, type Phase } from "@/lib/aviator/game";
 
@@ -30,9 +29,6 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
     if (!canvas) return;
     const context = canvas.getContext("2d");
     if (!context) return;
-
-    const clouds = new Image();
-    clouds.src = cloudsAsset.url;
 
     let frame = 0;
     let crashAt = 0;
@@ -91,14 +87,28 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
         context.restore();
       }
 
-      if (clouds.complete) {
-        context.save();
-        context.globalAlpha = 0.22;
+      /* procedural cloud band — drawn in code, nothing to download */
+      {
         const cloudH = Math.min(120, plotH * 0.35);
-        context.drawImage(clouds, -cloudOffset, originY - cloudH, width, cloudH);
-        context.drawImage(clouds, width - cloudOffset, originY - cloudH, width, cloudH);
+        const baseY = originY - cloudH * 0.25;
+        context.save();
+        context.globalAlpha = 0.16;
+        context.fillStyle = "#ffffff";
+        for (let pass = 0; pass < 2; pass += 1) {
+          const shift = pass * width;
+          for (let i = 0; i < 7; i += 1) {
+            const cx = ((i / 7) * width + shift - cloudOffset + width) % (width * 2);
+            const r = cloudH * (0.28 + ((i * 37) % 10) / 40);
+            context.beginPath();
+            context.arc(cx, baseY - r * 0.6, r, 0, Math.PI * 2);
+            context.arc(cx + r * 0.9, baseY - r * 0.35, r * 0.75, 0, Math.PI * 2);
+            context.arc(cx - r * 0.9, baseY - r * 0.3, r * 0.65, 0, Math.PI * 2);
+            context.fill();
+          }
+        }
         context.restore();
       }
+
 
       /* axes */
       context.strokeStyle = "rgba(255,255,255,0.16)";
