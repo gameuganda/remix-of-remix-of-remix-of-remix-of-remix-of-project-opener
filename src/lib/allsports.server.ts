@@ -270,7 +270,7 @@ async function fetchLiveOdds(
 
 export type { MainOdds } from "./allsports.server-types";
 import type { MainOdds } from "./allsports.server-types";
-import { derivedMainOdds, isUnpriced } from "./derived-odds";
+import { derivedMainOdds, derivedMarkets, isUnpriced } from "./derived-odds";
 
 /** Sports where a fixture can end level, so the X column is meaningful. */
 const DRAW_SPORTS: Record<string, boolean> = {
@@ -1053,6 +1053,57 @@ function toTeamLineup(raw: unknown): TeamLineup {
   };
 }
 
+/**
+ * Highlight search on YouTube, used when the provider publishes no video for
+ * a fixture. Parses the public results page (no API key required) and returns
+ * the first few clips.
+ */
+async function youtubeVideos(query: string, limit = 4): Promise<VideoItem[]> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%253D%253D`,
+      { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "en" } },
+    );
+    if (!res.ok) return [];
+    const html = await res.text();
+    const re = /"videoId":"([\w-]{11})"[\s\S]{0,400}?"text":"([^"]{5,120})"/g;
+    const seen = new Set<string>();
+    const out: VideoItem[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) && out.length < limit) {
+      const id = m[1]!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const raw = m[2] ?? "Highlights";
+      const title = raw
+        .replace(/\\u([\dA-Fa-f]{4})/g, (_s, h: string) => String.fromCharCode(parseInt(h, 16)))
+        .replace(/\\(.)/g, "$1")
+        .trim();
+      out.push({ title: title || "Highlights", url: `https://www.youtube.com/watch?v=${id}` });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/** Provider videos first; YouTube highlights when the provider has none. */
+async function resolveVideos(
+  raw: Json[] | null,
+  fixture: { home: string; away: string; league: string; finished: boolean },
+): Promise<VideoItem[]> {
+  const provider = (raw ?? [])
+    .map((v) => ({
+      title: String(v["video_title_full"] ?? v["video_title"] ?? "Highlight"),
+      url: String(v["video_url"] ?? ""),
+    }))
+    .filter((v) => v.url);
+  if (provider.length) return provider;
+  if (!fixture.home || !fixture.away) return [];
+  const suffix = fixture.finished ? "highlights" : "preview";
+  return youtubeVideos(`${fixture.home} vs ${fixture.away} ${fixture.league} ${suffix}`);
+}
+
 export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<MatchDetails> {
   const empty: MatchDetails = {
     match: null,
@@ -1101,7 +1152,9 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
           ).catch(() => null)
         : Promise.resolve(null),
       fetchStandings(sport, Number(fixture["league_key"] ?? 0)).catch(() => []),
-      call<Json[]>(sport, { met: "Videos", matchId }, 10 * 60_000).catch(() => null),
+      call<Json[]>(sport, { met: "Videos", eventId: matchId, matchId }, 10 * 60_000).catch(
+        () => null,
+      ),
       isFootball
         ? call<Json[]>(sport, { met: "Probabilities", matchId }, 5 * 60_000).catch(() => null)
         : Promise.resolve(null),
@@ -1132,6 +1185,27 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
     markets = mergeMarkets(markets, parseLiveOdds(rows));
   }
 
+  const detailHome = String(
+    (isTennis ? fixture["event_first_player"] : fixture["event_home_team"]) ?? "",
+  );
+  const detailAway = String(
+    (isTennis ? fixture["event_second_player"] : fixture["event_away_team"]) ?? "",
+  );
+  const detailFinished = FINISHED_RE.test(String(fixture["event_status"] ?? ""));
+  // Unpriced fixtures get the same derived prices the board shows, so the
+  // detail page always lists every market the fixture is bettable on.
+  if (!detailFinished && isUnpriced(mainOdds(sport, markets))) {
+    markets = mergeMarkets(
+      markets,
+      derivedMarkets({
+        id: matchId,
+        home: detailHome,
+        away: detailAway,
+        drawPossible: DRAW_SPORTS[sport] ?? true,
+      }),
+    );
+  }
+
   const lineupNode = fixture["lineups"];
   const hasLineups = lineupNode && typeof lineupNode === "object";
 
@@ -1153,12 +1227,12 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
           away: toTeamLineup((lineupNode as Json)["away_team"]),
         }
       : null,
-    videos: (videoRes ?? [])
-      .map((v) => ({
-        title: String(v["video_title"] ?? "Highlight"),
-        url: String(v["video_url"] ?? ""),
-      }))
-      .filter((v) => v.url),
+    videos: await resolveVideos(videoRes, {
+      home: detailHome,
+      away: detailAway,
+      league: String(fixture["league_name"] ?? ""),
+      finished: detailFinished,
+    }),
     comments: toComments(commentRes, matchId),
     probabilities: toProbabilities(probRes),
     boxScore: toBoxScore(fixture["player_statistics"]),
