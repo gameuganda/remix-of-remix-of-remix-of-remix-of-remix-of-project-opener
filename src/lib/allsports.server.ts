@@ -1053,6 +1053,55 @@ function toTeamLineup(raw: unknown): TeamLineup {
   };
 }
 
+/**
+ * Highlight search on YouTube, used when the provider publishes no video for
+ * a fixture. Parses the public results page (no API key required) and returns
+ * the first few clips.
+ */
+async function youtubeVideos(query: string, limit = 4): Promise<VideoItem[]> {
+  try {
+    const res = await fetch(
+      `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%253D%253D`,
+      { headers: { "User-Agent": "Mozilla/5.0", "Accept-Language": "en" } },
+    );
+    if (!res.ok) return [];
+    const html = await res.text();
+    const re = /"videoId":"([\w-]{11})"[\s\S]{0,400}?"text":"([^"]{5,120})"/g;
+    const seen = new Set<string>();
+    const out: VideoItem[] = [];
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) && out.length < limit) {
+      const id = m[1]!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      out.push({
+        title: (m[2] ?? "Highlights").replace(/\\u0026/g, "&").replace(/\\"/g, '"'),
+        url: `https://www.youtube.com/watch?v=${id}`,
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/** Provider videos first; YouTube highlights when the provider has none. */
+async function resolveVideos(
+  raw: Json[] | null,
+  fixture: { home: string; away: string; league: string; finished: boolean },
+): Promise<VideoItem[]> {
+  const provider = (raw ?? [])
+    .map((v) => ({
+      title: String(v["video_title_full"] ?? v["video_title"] ?? "Highlight"),
+      url: String(v["video_url"] ?? ""),
+    }))
+    .filter((v) => v.url);
+  if (provider.length) return provider;
+  if (!fixture.home || !fixture.away) return [];
+  const suffix = fixture.finished ? "highlights" : "preview";
+  return youtubeVideos(`${fixture.home} vs ${fixture.away} ${fixture.league} ${suffix}`);
+}
+
 export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<MatchDetails> {
   const empty: MatchDetails = {
     match: null,
