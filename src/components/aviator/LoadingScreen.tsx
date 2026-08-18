@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import splash from "@/assets/aviator/splash.jpg.asset.json";
+import { PlaneSprite } from "@/components/aviator/PlaneSprite";
 
 /** Preload as early as the module is evaluated so the splash never flashes empty. */
 if (typeof window !== "undefined") {
@@ -19,32 +20,32 @@ export function LoadingScreen({ label = "Loading live table…" }: { label?: str
   }, []);
 
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-background">
+    <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col items-center justify-end overflow-hidden bg-background">
       <img
         src={splash.url}
         alt=""
         aria-hidden="true"
         fetchPriority="high"
         decoding="sync"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-40 blur-sm"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
       />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-6 px-6">
-        <img
-          src={splash.url}
-          alt="Aviator crash game"
-          fetchPriority="high"
-          decoding="sync"
-          className="w-full rounded-2xl border border-border object-cover shadow-2xl"
-        />
-
+      <div className="relative z-10 mb-[12vh] flex w-full max-w-xl flex-col items-center gap-5 px-8">
         <p className="font-display text-xs uppercase tracking-[0.35em] text-muted-foreground">
           {label}
         </p>
 
         <div className="w-full">
-          <div className="h-2 w-full overflow-hidden rounded-full bg-elevated">
+          <div className="relative mb-3 h-8 w-full">
+            <div
+              className="absolute bottom-0 transition-[left] duration-200 ease-out"
+              style={{ left: `${progress}%`, transform: "translateX(-50%)" }}
+            >
+              <PlaneSprite className="w-16" />
+            </div>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-elevated/80">
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
               style={{
