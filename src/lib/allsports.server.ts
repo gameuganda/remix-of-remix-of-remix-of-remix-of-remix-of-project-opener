@@ -457,9 +457,11 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
   const status = String(f["event_status"] ?? "");
   const date = dateKey(f);
   const time = String(f["event_time"] ?? "");
+  const id = String(f["event_key"] ?? "");
+  const isFinished = FINISHED_RE.test(status) || VOID_RE.test(status);
 
   return {
-    id: String(f["event_key"] ?? ""),
+    id,
     sport,
     date,
     time,
@@ -478,7 +480,7 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
       !VOID_RE.test(status) &&
       (String(f["event_live"] ?? "0") === "1" ||
         /^\d+|half|^ht$|break|set \d|quarter|q\d|^ot$|pen/i.test(status)),
-    finished: FINISHED_RE.test(status) || VOID_RE.test(status),
+    finished: isFinished,
 
     home,
     away,
@@ -490,7 +492,7 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
     awayScore,
     periods: periodScores(sport, f),
     marketCount: markets.length,
-    odds: mainOdds(sport, markets),
+    odds: resolvedOdds(sport, markets, { id, home, away, finished: isFinished }),
   };
 }
 
