@@ -19,6 +19,7 @@ import { AuthModals } from "@/components/xbet/AuthModals";
 import { TicketPdfFloat } from "@/components/xbet/TicketPdfFloat";
 import { BetSettlement } from "@/components/xbet/BetSettlement";
 import { PaymentPoller } from "@/components/xbet/PaymentPoller";
+import { VideoPlayerProvider } from "@/components/xbet/VideoPlayerContext";
 
 
 import { Toaster } from "@/components/ui/sonner";
@@ -202,13 +203,15 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BetSlipProvider>
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-          <AuthModals />
-          <BetSettlement />
-          <PaymentPoller />
-          <TicketPdfFloat />
-          <Toaster position="bottom-right" />
+          <VideoPlayerProvider>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <AuthModals />
+            <BetSettlement />
+            <PaymentPoller />
+            <TicketPdfFloat />
+            <Toaster position="bottom-right" />
+          </VideoPlayerProvider>
 
         </BetSlipProvider>
       </AuthProvider>
