@@ -330,13 +330,14 @@ function VirtualPageInner() {
                 <span className="rounded bg-black/20 px-1 text-[9px] uppercase">{m.league}</span>
               </div>
 
-              {m.groups.map((g) => (
-                <div key={`${m.id}-${g.key}`} className="flex flex-1 flex-col">
-                  <GroupTitle>{g.label}</GroupTitle>
+              {m.groups.map((g, gi) => (
+                <div key={`${m.id}-${g.key}`} className="flex flex-col lg:flex-1">
+                  {m.groups[gi - 1]?.label !== g.label && <GroupTitle>{g.label}</GroupTitle>}
                   <div
-                    className="grid auto-rows-fr flex-1 gap-1 p-1"
+                    className="grid gap-1 p-1 lg:h-full lg:flex-1 lg:auto-rows-fr"
                     style={{ gridTemplateColumns: `repeat(${columnsFor(g)}, minmax(0, 1fr))` }}
                   >
+
                     {g.odds.map((o) => {
                       const type = g.key === "10" ? "OTHER" : g.type;
                       const pick = `${type}|${o.name}`;
