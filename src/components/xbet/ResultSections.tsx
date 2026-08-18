@@ -3,6 +3,7 @@ import { Play } from "lucide-react";
 import { matchDetailsQuery } from "@/lib/sports-queries";
 import type { Sport } from "@/lib/sports-types";
 import { ugDateTime } from "@/lib/time";
+import { thumbUrl, useVideoPlayer } from "@/components/xbet/VideoPlayerContext";
 
 export function Panel({
   title,
@@ -39,14 +40,6 @@ export function Block({ title, children }: { title: string; children: React.Reac
       {children}
     </div>
   );
-}
-
-function embedUrl(url: string): string | null {
-  const yt = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{6,})/.exec(url);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
-  const dm = /dailymotion\.com\/video\/([\w]+)/.exec(url);
-  if (dm) return `https://www.dailymotion.com/embed/video/${dm[1]}`;
-  return null;
 }
 
 type LineupPlayer = { name: string; number: string; position: string };
