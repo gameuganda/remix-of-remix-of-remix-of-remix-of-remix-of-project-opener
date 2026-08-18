@@ -1044,7 +1044,19 @@ function thumbUrl(url: string): string | null {
  * Small floating player. Stays inside the app (no navigation away), sits above
  * the page without a backdrop so nothing behind it is dimmed or blurred.
  */
-function FloatingPlayer({ video, onClose }: { video: VideoItem; onClose: () => void }) {
+function FloatingPlayer({
+  videos,
+  index,
+  onIndex,
+  onClose,
+}: {
+  videos: VideoItem[];
+  index: number;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const video = videos[index];
+  if (!video) return null;
   return (
     <div className="pointer-events-none fixed inset-0 z-[80] flex items-end justify-end p-3 sm:p-5">
       <div className="pointer-events-auto w-full max-w-[420px] overflow-hidden rounded-2xl bg-xb-panel shadow-2xl ring-1 ring-xb-line">
@@ -1064,6 +1076,7 @@ function FloatingPlayer({ video, onClose }: { video: VideoItem; onClose: () => v
         </div>
         <div className="aspect-video w-full bg-black">
           <iframe
+            key={video.url}
             src={playerUrl(video.url)}
             title={video.title}
             loading="lazy"
@@ -1074,13 +1087,39 @@ function FloatingPlayer({ video, onClose }: { video: VideoItem; onClose: () => v
             className="h-full w-full"
           />
         </div>
+        {videos.length > 1 ? (
+          <div className="flex items-center justify-between gap-2 px-3 py-2">
+            <span className="text-[11px] text-xb-text-muted">
+              Clip {index + 1} of {videos.length} · if a clip is blocked by the rights holder, try
+              the next one
+            </span>
+            <span className="flex gap-1">
+              <button
+                type="button"
+                aria-label="Previous clip"
+                onClick={() => onIndex((index - 1 + videos.length) % videos.length)}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next clip"
+                onClick={() => onIndex((index + 1) % videos.length)}
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
+              >
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          </div>
+        ) : null}
       </div>
     </div>
   );
 }
 
 function VideosTab({ videos }: { videos: VideoItem[] }) {
-  const [active, setActive] = useState<VideoItem | null>(null);
+  const [active, setActive] = useState<number | null>(null);
 
   if (videos.length === 0) {
     return (
@@ -1099,7 +1138,7 @@ function VideosTab({ videos }: { videos: VideoItem[] }) {
             <button
               key={i}
               type="button"
-              onClick={() => setActive(v)}
+              onClick={() => setActive(i)}
               className="group overflow-hidden rounded-xl bg-xb-odds text-left ring-1 ring-xb-line transition hover:ring-xb-blue"
             >
               <div className="relative aspect-video w-full overflow-hidden bg-xb-panel-alt">
@@ -1124,7 +1163,14 @@ function VideosTab({ videos }: { videos: VideoItem[] }) {
           );
         })}
       </div>
-      {active ? <FloatingPlayer video={active} onClose={() => setActive(null)} /> : null}
+      {active !== null ? (
+        <FloatingPlayer
+          videos={videos}
+          index={active}
+          onIndex={setActive}
+          onClose={() => setActive(null)}
+        />
+      ) : null}
     </>
   );
 }
