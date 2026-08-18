@@ -238,6 +238,7 @@ export type SiteSettings = {
   mobileMoneyProviders: string;
   license: string;
   address: string;
+  allsportsApiKey: string;
 };
 
 export type AdminState = {
