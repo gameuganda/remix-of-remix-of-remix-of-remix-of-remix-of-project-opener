@@ -1058,7 +1058,7 @@ function toTeamLineup(raw: unknown): TeamLineup {
  * a fixture. Parses the public results page (no API key required) and returns
  * the first few clips.
  */
-async function youtubeVideos(query: string, limit = 4): Promise<VideoItem[]> {
+async function youtubeVideos(query: string, limit = 6): Promise<VideoItem[]> {
   try {
     const res = await fetch(
       `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%253D%253D`,
