@@ -191,7 +191,7 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
       if (plane) {
         // The plotted point meets the lower centre of the tail while the
         // aircraft remains level, matching the original Aviator artwork.
-        const anchor = "translate(-1%, -82%)";
+        const anchor = "translate(-6.7%, -93.6%)";
 
         if (currentPhase === "crashed") {
           const gone = Math.min(1, (time - crashAt) / 900);

@@ -27,15 +27,15 @@ export function PlaneSprite({
       >
         {/* Side-on prop: the disc spins about the fuselage axis, so the blades
             read as a fast vertical flicker rather than a flat pinwheel. */}
-        <g transform="translate(135.5 37.7)">
+        <g transform="translate(135.55 36.95)">
           <g>
-            <path fill="#E50539" d={PROP_PATH} transform="translate(-135.5 -34.5)" />
+            <path fill="#E50539" d={PROP_PATH} transform="translate(-135.55 -33.75)" />
             {spinning ? (
               <animateTransform
                 attributeName="transform"
                 type="scale"
                 values="1 1;1 0.12;1 -1;1 -0.12;1 1"
-                dur="0.22s"
+                dur="0.38s"
                 repeatCount="indefinite"
                 calcMode="linear"
               />

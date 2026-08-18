@@ -273,7 +273,7 @@ function AviatorGame() {
 
       <HistoryBar rounds={history} />
 
-      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-2 lg:grid-cols-[260px_1fr_260px] lg:content-stretch lg:overflow-hidden">
+      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-2 xb-slimscroll lg:grid-cols-[260px_1fr_260px] lg:content-stretch lg:overflow-hidden">
         <div className="hidden min-h-0 lg:block">
           <LiveBets
             roundBets={roundBets}

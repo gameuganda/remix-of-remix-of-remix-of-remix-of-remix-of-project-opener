@@ -51,7 +51,7 @@ export function ChatPanel({
         </span>
       </header>
 
-      <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2.5 py-2">
+      <div ref={listRef} className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2.5 py-2 xb-slimscroll">
         {messages.length === 0 ? (
           <p className="py-6 text-center text-[11px] text-muted-foreground">
             Be the first to say something.

@@ -96,7 +96,7 @@ export function LiveBets({
         <span className="w-[62px] text-right">Win</span>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-1.5 pb-2">
+      <div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto px-1.5 pb-2 xb-slimscroll">
         {list.length === 0 ? (
           <p className="px-2 py-6 text-center text-[11px] text-muted-foreground">
             No bets yet for this round.
