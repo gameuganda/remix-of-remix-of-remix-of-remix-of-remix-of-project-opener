@@ -7,13 +7,10 @@ import {
   ArrowLeft,
   ArrowUp,
   ArrowDown,
-  ChevronLeft,
-  ChevronRight,
   Loader2,
   Lock,
   Play,
   Sparkles,
-  X,
 } from "lucide-react";
 import { Header } from "@/components/xbet/Header";
 import { LeftSidebar } from "@/components/xbet/LeftSidebar";
@@ -26,6 +23,7 @@ import { outcomeLocked, lockReason, type LockableMatch } from "@/lib/live-lock";
 import { useOddsFlash, oddsFlashClass } from "@/lib/use-odds-flash";
 
 import { useBetSlip } from "@/components/xbet/BetSlipContext";
+import { useVideoPlayer, thumbUrl } from "@/components/xbet/VideoPlayerContext";
 import {
   matchDetailsQuery,
   type EventRow,
@@ -1025,127 +1023,8 @@ function LineupsTab({
   );
 }
 
-/** YouTube / Dailymotion id extraction, used for both thumbnail and player. */
-function videoSource(url: string): { kind: "yt" | "dm" | "raw"; id: string } {
-  const yt = /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/.exec(url);
-  if (yt?.[1]) return { kind: "yt", id: yt[1] };
-  const dm = /dailymotion\.com\/(?:video|embed\/video)\/(\w+)/.exec(url);
-  if (dm?.[1]) return { kind: "dm", id: dm[1] };
-  return { kind: "raw", id: url };
-}
-
-function playerUrl(url: string): string {
-  const s = videoSource(url);
-  // youtube-nocookie avoids the "service unavailable" account/consent wall the
-  // standard embed host throws inside sandboxed frames.
-  if (s.kind === "yt")
-    return `https://www.youtube-nocookie.com/embed/${s.id}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
-  if (s.kind === "dm") return `https://www.dailymotion.com/embed/video/${s.id}?autoplay=1`;
-  return url;
-}
-
-function thumbUrl(url: string): string | null {
-  const s = videoSource(url);
-  if (s.kind === "yt") return `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`;
-  if (s.kind === "dm") return `https://www.dailymotion.com/thumbnail/video/${s.id}`;
-  return null;
-}
-
-/**
- * Large centered floating player. Opens with a soft "app from the dock" scale
- * effect, stays inside the app (no navigation away), and never dims or blurs
- * the page behind it.
- */
-function FloatingPlayer({
-  videos,
-  index,
-  onIndex,
-  onClose,
-}: {
-  videos: VideoItem[];
-  index: number;
-  onIndex: (i: number) => void;
-  onClose: () => void;
-}) {
-  const video = videos[index];
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setOpen(true), 10);
-    return () => clearTimeout(t);
-  }, []);
-
-  if (!video) return null;
-  return (
-    <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
-      <div
-        className={`pointer-events-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-xb-panel shadow-[0_24px_80px_-16px_rgba(0,0,0,0.55)] ring-1 ring-xb-line transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)] ${
-          open ? "scale-100 opacity-100 translate-y-0" : "scale-50 opacity-0 translate-y-12"
-        }`}
-        style={{ maxHeight: "calc(100dvh - 2rem)" }}
-      >
-        <div className="flex items-center gap-3 border-b border-xb-line px-4 py-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-xb-blue/10 text-xb-blue">
-            <Play className="h-4 w-4" />
-          </span>
-          <span className="flex-1 truncate text-[13px] font-semibold text-xb-text">
-            {video.title}
-          </span>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close video"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-xb-odds text-xb-text-muted transition hover:bg-xb-panel-alt hover:text-xb-text"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="aspect-video w-full bg-black">
-          <iframe
-            key={video.url}
-            src={playerUrl(video.url)}
-            title={video.title}
-            loading="lazy"
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-            // Player may script itself, but can never navigate the app away.
-            sandbox="allow-scripts allow-same-origin allow-presentation"
-            className="h-full w-full"
-          />
-        </div>
-        {videos.length > 1 ? (
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="text-[12px] text-xb-text-muted">
-              Clip {index + 1} of {videos.length} · if a clip is blocked by the rights holder, try
-              the next one
-            </span>
-            <span className="flex gap-2">
-              <button
-                type="button"
-                aria-label="Previous clip"
-                onClick={() => onIndex((index - 1 + videos.length) % videos.length)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Next clip"
-                onClick={() => onIndex((index + 1) % videos.length)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </span>
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 function VideosTab({ videos }: { videos: VideoItem[] }) {
-  const [active, setActive] = useState<number | null>(null);
+  const { open } = useVideoPlayer();
 
   if (videos.length === 0) {
     return (
@@ -1156,48 +1035,38 @@ function VideosTab({ videos }: { videos: VideoItem[] }) {
   }
 
   return (
-    <>
-      <div className="grid gap-3 p-3 md:grid-cols-2">
-        {videos.map((v, i) => {
-          const thumb = thumbUrl(v.url);
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActive(i)}
-              className="group overflow-hidden rounded-xl bg-xb-odds text-left ring-1 ring-xb-line transition hover:ring-xb-blue"
-            >
-              <div className="relative aspect-video w-full overflow-hidden bg-xb-panel-alt">
-                {thumb ? (
-                  <img
-                    src={thumb}
-                    alt={v.title}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                  />
-                ) : null}
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-xb-blue/90 text-xb-on-dark shadow-lg transition group-hover:scale-110">
-                    <Play className="h-5 w-5 translate-x-[1px]" />
-                  </span>
+    <div className="grid gap-3 p-3 md:grid-cols-2">
+      {videos.map((v, i) => {
+        const thumb = thumbUrl(v.url);
+        return (
+          <button
+            key={v.url || i}
+            type="button"
+            onClick={() => open(videos, i)}
+            className="group overflow-hidden rounded-xl bg-xb-odds text-left ring-1 ring-xb-line transition hover:ring-xb-blue"
+          >
+            <div className="relative aspect-video w-full overflow-hidden bg-xb-panel-alt">
+              {thumb ? (
+                <img
+                  src={thumb}
+                  alt={v.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                />
+              ) : null}
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-xb-blue/90 text-xb-on-dark shadow-lg transition group-hover:scale-110">
+                  <Play className="h-5 w-5 translate-x-[1px]" />
                 </span>
-              </div>
-              <span className="block truncate px-3 py-2 text-[12px] font-medium text-xb-text group-hover:text-xb-blue">
-                {v.title}
               </span>
-            </button>
-          );
-        })}
-      </div>
-      {active !== null ? (
-        <FloatingPlayer
-          videos={videos}
-          index={active}
-          onIndex={setActive}
-          onClose={() => setActive(null)}
-        />
-      ) : null}
-    </>
+            </div>
+            <span className="block truncate px-3 py-2 text-[12px] font-medium text-xb-text group-hover:text-xb-blue">
+              {v.title}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

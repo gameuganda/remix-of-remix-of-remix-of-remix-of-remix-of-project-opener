@@ -1058,6 +1058,10 @@ function toTeamLineup(raw: unknown): TeamLineup {
  * a fixture. Parses the public results page (no API key required) and returns
  * the first few clips.
  */
+/** Video-game / simulation uploads that must never pass as real highlights. */
+const FAKE_VIDEO_RE =
+  /\b(pes\s?\d*|efootball|fifa\s?\d+|fc\s?2[45]|pc\s?game|gameplay|game\s?play|simulation|simulated|prediction|predictions|preview\s?show|tips|betting|fm\s?\d+|football\s?manager|dream\s?league|ps[45]|xbox|mod|patch|realistic|recreation|emulator|sub\s?vs)\b/i;
+
 async function youtubeVideos(query: string, limit = 6): Promise<VideoItem[]> {
   try {
     const res = await fetch(
@@ -1079,6 +1083,7 @@ async function youtubeVideos(query: string, limit = 6): Promise<VideoItem[]> {
         .replace(/\\u([\dA-Fa-f]{4})/g, (_s, h: string) => String.fromCharCode(parseInt(h, 16)))
         .replace(/\\(.)/g, "$1")
         .trim();
+      if (FAKE_VIDEO_RE.test(title)) continue;
       out.push({ title: title || "Highlights", url: `https://www.youtube.com/watch?v=${id}` });
     }
     return out;
@@ -1101,7 +1106,12 @@ async function resolveVideos(
   if (provider.length) return provider;
   if (!fixture.home || !fixture.away) return [];
   const suffix = fixture.finished ? "highlights" : "preview";
-  return youtubeVideos(`${fixture.home} vs ${fixture.away} ${fixture.league} ${suffix}`);
+  const league = fixture.league ? ` ${fixture.league}` : "";
+  const primary = await youtubeVideos(
+    `"${fixture.home}" vs "${fixture.away}"${league} ${suffix} -PES -eFootball -FIFA -gameplay`,
+  );
+  if (primary.length) return primary;
+  return youtubeVideos(`${fixture.home} vs ${fixture.away} ${suffix} -gameplay -PES -eFootball`);
 }
 
 export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<MatchDetails> {
