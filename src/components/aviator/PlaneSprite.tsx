@@ -25,15 +25,19 @@ export function PlaneSprite({
         className="h-full w-full"
         style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.45))" }}
       >
-        {/* propeller — spins around its hub */}
-        <g
-          style={{
-            transformBox: "view-box",
-            transformOrigin: "135.5px 34.5px",
-            animation: spinning ? "plane-prop-spin 0.32s linear infinite" : "none",
-          }}
-        >
+        {/* SVG-native rotation keeps the propeller reliable after deployment. */}
+        <g>
           <path fill="#E50539" d={PROP_PATH} transform="translate(0 3.2)" />
+          {spinning ? (
+            <animateTransform
+              attributeName="transform"
+              type="rotate"
+              from="0 135.5 37.7"
+              to="360 135.5 37.7"
+              dur="0.18s"
+              repeatCount="indefinite"
+            />
+          ) : null}
         </g>
         {/* fuselage, wings, tail */}
         <path fill="#E50539" d={BODY_PATH} transform="translate(24.5 34.7)" />
