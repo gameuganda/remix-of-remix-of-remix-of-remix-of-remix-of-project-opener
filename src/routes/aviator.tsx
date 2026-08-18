@@ -67,7 +67,7 @@ function AviatorGate() {
 
 function AviatorLocked({ onLogin, onRegister }: { onLogin: () => void; onRegister: () => void }) {
   return (
-    <div className="aviator-root fixed inset-0 z-40 flex flex-col overflow-hidden">
+    <div className="aviator-root fixed inset-0 z-[45] flex flex-col overflow-hidden">
       <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
         <Link
           to="/"
@@ -241,7 +241,7 @@ function AviatorGame() {
   const signedIn = Boolean(userId);
 
   return (
-    <div className="aviator-root fixed inset-0 z-40 flex flex-col overflow-hidden">
+    <div className="aviator-root fixed inset-0 z-[45] flex flex-col overflow-hidden">
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
           <Link
