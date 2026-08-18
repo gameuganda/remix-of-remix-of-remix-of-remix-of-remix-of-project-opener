@@ -27,12 +27,13 @@ export function PlaneSprite({
       >
         {/* Propeller: exact placement from the official sprite —
             path drawn at translate(0 3.2), so its disc centre sits at
-            (135.55, 36.95). The spin squashes the disc about that exact
-            centre so the hub never moves. */}
+            (135.55, 36.95). It rotates about that hub at high RPM so it
+            reads as a spinning disc rather than a shaking shape. */}
         <g
           style={{
             transformOrigin: "135.55px 36.95px",
-            animation: spinning ? "aviator-prop-spin 0.12s linear infinite" : undefined,
+            animation: spinning ? "aviator-prop-spin 0.04s linear infinite" : undefined,
+            willChange: "transform",
           }}
         >
           <path fill="#E50539" d={PROP_PATH} transform="translate(0 3.2)" />
@@ -40,9 +41,8 @@ export function PlaneSprite({
         {/* fuselage, wings, tail */}
         <path fill="#E50539" d={BODY_PATH} transform="translate(24.5 34.7)" />
         <style>{`@keyframes aviator-prop-spin {
-  0%   { transform: scaleY(1); }
-  50%  { transform: scaleY(0.18); }
-  100% { transform: scaleY(1); }
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }`}</style>
       </svg>
     </div>
