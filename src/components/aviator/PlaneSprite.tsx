@@ -38,7 +38,7 @@ export function PlaneSprite({
           <path
             fill="#E50539"
             d={PROP_PATH}
-            transform="translate(0 3.2) scaleY(-1)"
+            transform="translate(0 3.2)"
             style={{ transformOrigin: "135.55px 36.95px" }}
           />
         </g>
