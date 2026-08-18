@@ -25,9 +25,7 @@ export function PlaneSprite({
         className="h-full w-full"
         style={{ filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.45))" }}
       >
-        {/* Propeller: exact placement from the official sprite. The rapid
-            blade flip matches the fly-away effect without rotating the
-            whole propeller or moving its hub. */}
+        {/* Single propeller blade in the official lower-blade position. */}
         <g
           style={{
             transformOrigin: "135.55px 36.95px",
@@ -45,8 +43,8 @@ export function PlaneSprite({
         {/* fuselage, wings, tail */}
         <path fill="#E50539" d={BODY_PATH} transform="translate(24.5 34.7)" />
         <style>{`@keyframes aviator-prop-flicker {
-  0%, 49%  { transform: scaleY(1); }
-  50%, 100% { transform: scaleY(-1); }
+  0%, 49%  { opacity: 1; }
+  50%, 100% { opacity: 0.58; }
 }`}</style>
       </svg>
     </div>
