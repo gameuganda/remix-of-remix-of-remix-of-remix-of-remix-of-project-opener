@@ -3,7 +3,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
-import { ArrowLeft, ArrowUp, ArrowDown, Loader2, Lock, Play, Sparkles, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Lock,
+  Play,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { Header } from "@/components/xbet/Header";
 import { LeftSidebar } from "@/components/xbet/LeftSidebar";
 import { RightSidebar } from "@/components/xbet/RightSidebar";
