@@ -23,9 +23,20 @@ import type { ChatMessage } from "@/lib/aviator/table";
 import { roundById } from "@/lib/aviator/engine";
 import { serverNow } from "@/lib/server-time";
 import { useCountryLocale } from "@/lib/site-country";
+import splashAsset from "@/assets/aviator/splash.jpg.asset.json";
+
+function AviatorWordmark() {
+  return (
+    <span className="font-display text-lg font-extrabold uppercase leading-none tracking-[0.12em] sm:text-xl">
+      <span className="text-foreground">BET</span>
+      <span className="text-[hsl(210_100%_56%)]">PLUS+</span>
+    </span>
+  );
+}
 
 export const Route = createFileRoute("/aviator")({
   head: () => ({
+    links: [{ rel: "preload", as: "image", href: splashAsset.url, fetchpriority: "high" }],
     meta: [
       { title: "Aviator Crash Game — BET PLUS+" },
       {
@@ -76,9 +87,7 @@ function AviatorLocked({ onLogin, onRegister }: { onLogin: () => void; onRegiste
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <span className="font-display text-sm font-bold uppercase tracking-[0.2em] text-primary">
-          Aviator
-        </span>
+        <AviatorWordmark />
       </header>
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center shadow-2xl">
@@ -251,9 +260,7 @@ function AviatorGame() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <span className="font-display text-sm font-bold uppercase tracking-[0.2em] text-primary">
-            Aviator
-          </span>
+          <AviatorWordmark />
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-elevated px-3 py-1 font-display text-xs tabular-nums text-foreground">
