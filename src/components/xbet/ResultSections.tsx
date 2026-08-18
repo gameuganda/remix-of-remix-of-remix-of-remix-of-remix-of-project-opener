@@ -313,8 +313,8 @@ export function MatchHighlightsSection({
   const details = useDetails(sport, matchId);
   const d = details.data;
   const m = d?.match;
-  const video = d?.videos.find((v) => embedUrl(v.url)) ?? d?.videos[0];
-  const embed = video ? embedUrl(video.url) : null;
+  const clips = d?.videos ?? [];
+  const { open } = useVideoPlayer();
 
   if (!matchId)
     return (
@@ -335,38 +335,39 @@ export function MatchHighlightsSection({
 
   return (
     <>
-      {embed ? (
-        <div className="aspect-video w-full bg-black">
-          <iframe
-            src={embed}
-            title={video?.title ?? "Match highlights"}
-            loading="lazy"
-            allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="h-full w-full"
-          />
-        </div>
-      ) : video ? (
-        <a
-          href={video.url}
-          target="_blank"
-          rel="noreferrer"
-          className="flex aspect-video items-center justify-center bg-xb-panel-alt"
-        >
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-xb-blue text-xb-on-dark">
-            <Play className="h-5 w-5" />
-          </span>
-        </a>
-      ) : null}
-      {video && (
-        <a
-          href={video.url}
-          target="_blank"
-          rel="noreferrer"
-          className="block truncate px-3 py-2 text-[12px] font-medium text-xb-text hover:text-xb-blue"
-        >
-          {video.title}
-        </a>
+      {clips.length > 0 && (
+        <Block title="Highlights">
+          <div className="grid gap-2 p-2 sm:grid-cols-2">
+            {clips.map((v, i) => {
+              const thumb = thumbUrl(v.url);
+              return (
+                <button
+                  key={v.url}
+                  type="button"
+                  onClick={() => open(clips, i)}
+                  className="group overflow-hidden rounded-lg bg-xb-panel-alt text-left"
+                >
+                  <span className="relative flex aspect-video w-full items-center justify-center bg-black">
+                    {thumb && (
+                      <img
+                        src={thumb}
+                        alt={v.title}
+                        loading="lazy"
+                        className="h-full w-full object-cover opacity-90 transition group-hover:opacity-100"
+                      />
+                    )}
+                    <span className="absolute flex h-11 w-11 items-center justify-center rounded-full bg-xb-blue text-xb-on-dark shadow-lg">
+                      <Play className="h-5 w-5" />
+                    </span>
+                  </span>
+                  <span className="block truncate px-2 py-1.5 text-[11px] font-medium text-xb-text">
+                    {v.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Block>
       )}
 
       <Block title="Formation on the pitch">
