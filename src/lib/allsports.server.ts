@@ -1482,14 +1482,20 @@ export async function fetchOddsForIds(
 
 export type MatchOddsPatch = { id: string; marketCount: number; odds: MainOdds };
 
-/** Main-market odds for a list of match ids, used to hydrate rows lazily. */
+/**
+ * Main-market odds for a list of match ids, used to hydrate rows lazily.
+ * Only genuinely priced fixtures are returned — an unpriced result would
+ * otherwise overwrite the derived prices the row already shows.
+ */
 export async function fetchMatchOdds(sport: Sport, ids: string[]): Promise<MatchOddsPatch[]> {
   const found = await fetchOddsForIds(sport, ids);
-  return [...found.entries()].map(([id, markets]) => ({
-    id,
-    marketCount: markets.length,
-    odds: mainOdds(sport, markets),
-  }));
+  const patches: MatchOddsPatch[] = [];
+  for (const [id, markets] of found) {
+    const odds = mainOdds(sport, markets);
+    if (isUnpriced(odds)) continue;
+    patches.push({ id, marketCount: markets.length, odds });
+  }
+  return patches;
 }
 
 /**
