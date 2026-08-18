@@ -90,3 +90,47 @@ export function derivedMainOdds({
 export function isUnpriced(odds: MainOdds): boolean {
   return odds.home === null && odds.away === null;
 }
+
+type DerivedMarket = {
+  name: string;
+  outcomes: Array<{ label: string; odd: number; bookmaker: string; bookmakers: number }>;
+};
+
+/**
+ * Full market list for an unpriced fixture, so the match detail page shows the
+ * same prices the board shows instead of "no betting markets available".
+ */
+export function derivedMarkets(input: DerivedOddsInput): DerivedMarket[] {
+  const o = derivedMainOdds(input);
+  const out: DerivedMarket[] = [];
+  const mk = (name: string, entries: Array<[string, number | null]>) => {
+    const outcomes = entries
+      .filter((e): e is [string, number] => typeof e[1] === "number")
+      .map(([label, odd]) => ({ label, odd, bookmaker: "House", bookmakers: 1 }));
+    if (outcomes.length) out.push({ name, outcomes });
+  };
+
+  mk("1X2", [
+    ["1", o.home],
+    ["X", o.draw],
+    ["2", o.away],
+  ]);
+  if (o.draw !== null && o.home !== null && o.away !== null) {
+    const dc = (a: number, b: number) =>
+      Math.round(Math.max(1.01, 1 / (1 / a + 1 / b) * 1.03) * 100) / 100;
+    mk("Double chance", [
+      ["1X", dc(o.home, o.draw)],
+      ["12", dc(o.home, o.away)],
+      ["X2", dc(o.draw, o.away)],
+    ]);
+  }
+  mk(o.line || "Total Goals 2.5", [
+    ["Over 2.5", o.over],
+    ["Under 2.5", o.under],
+  ]);
+  mk("Both teams to score", [
+    ["Yes", o.bttsYes],
+    ["No", o.bttsNo],
+  ]);
+  return out;
+}
