@@ -52,6 +52,20 @@ function SettingsPage() {
           </div>
         </Panel>
 
+        <Panel title="Sports data provider (AllSportsAPI)">
+          <Field label="allsportsApiKey">
+            <input
+              className={inputCls}
+              value={String(s.allsportsApiKey ?? "")}
+              placeholder="AllSportsAPI key"
+              onChange={(e) => updateSettings({ allsportsApiKey: e.target.value.trim() })}
+            />
+          </Field>
+          <p className="mt-1 text-[11px] text-xb-text-muted">
+            Used for all countries, leagues, matches and odds. Changes apply within a minute.
+          </p>
+        </Panel>
+
         <Panel title="Danger zone">
           <p className="text-[11px] text-xb-text-muted">
             Resetting restores fresh demo data for users, agents, partners, bets, transactions and content.
