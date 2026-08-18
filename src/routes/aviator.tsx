@@ -273,7 +273,7 @@ function AviatorGame() {
 
       <HistoryBar rounds={history} />
 
-      <div className="grid min-h-0 flex-1 gap-2 overflow-y-auto p-2 lg:grid-cols-[260px_1fr_260px] lg:overflow-hidden">
+      <div className="grid min-h-0 flex-1 content-start gap-2 overflow-y-auto p-2 lg:grid-cols-[260px_1fr_260px] lg:content-stretch lg:overflow-hidden">
         <div className="hidden min-h-0 lg:block">
           <LiveBets
             roundBets={roundBets}
@@ -284,7 +284,7 @@ function AviatorGame() {
         </div>
 
         <div className="flex min-h-0 flex-col gap-2">
-          <div className="min-h-[220px] flex-1">
+          <div className="aspect-[16/9] min-h-[210px] w-full shrink-0 sm:aspect-[2/1] lg:min-h-[220px] lg:flex-1 lg:shrink">
             <GameCanvas
               phase={phase}
               multiplier={multiplier}
@@ -294,27 +294,28 @@ function AviatorGame() {
           </div>
           <div className="grid gap-2 md:grid-cols-2">
             {[1, 2].map((slot) => (
-              <BetPanel
-                key={slot}
-                slot={slot}
-                phase={phase}
-                roundId={round?.id ?? null}
-                nextRoundId={nextRound?.id ?? null}
-                multiplier={multiplier}
-                balance={balance}
-                signedIn={signedIn}
-                bets={myBets}
-                rules={rules}
-                onPlace={place}
-                onCashOut={manualCashOut}
-                onCancel={cancel}
-              />
+              <div key={slot} className={slot === 2 ? "hidden md:block" : "min-w-0"}>
+                <BetPanel
+                  slot={slot}
+                  phase={phase}
+                  roundId={round?.id ?? null}
+                  nextRoundId={nextRound?.id ?? null}
+                  multiplier={multiplier}
+                  balance={balance}
+                  signedIn={signedIn}
+                  bets={myBets}
+                  rules={rules}
+                  onPlace={place}
+                  onCashOut={manualCashOut}
+                  onCancel={cancel}
+                />
+              </div>
             ))}
           </div>
         </div>
 
         <div className="flex min-h-0 flex-col gap-2">
-          <div className="min-h-[240px] lg:hidden">
+          <div className="h-[420px] min-h-0 lg:hidden">
             <LiveBets
               roundBets={roundBets}
               myBets={myBets}
@@ -322,7 +323,7 @@ function AviatorGame() {
               currency={rules.currency}
             />
           </div>
-          <div className="min-h-[260px] flex-1">
+          <div className="hidden min-h-[260px] flex-1 lg:block">
             <ChatPanel
               messages={chat}
               userId={userId}

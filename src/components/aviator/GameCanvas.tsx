@@ -148,8 +148,6 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
       }
 
       const flying = currentPhase === "flying";
-      const wobble = flying ? Math.sin(time / 380) * 1.5 : 0;
-
       const pointAt = (seconds: number) => {
         const value = Math.exp(GROWTH_RATE * seconds);
         const x = originX + (seconds / timeSpan) * plotW;
@@ -193,24 +191,20 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
 
       const plane = planeRef.current;
       if (plane) {
-        const anchor = "translate(-4%, -50%)";
-        const behind = pointAt(Math.max(0, elapsed - 0.35));
-        const raw = (Math.atan2(tip.y - behind.y, Math.max(1, tip.x - behind.x)) * 180) / Math.PI;
-        const slopeClimb = Math.max(-20, Math.min(0, raw * 0.55));
-        const topBand = 80;
-        const closenessToTop = Math.max(0, Math.min(1, (padTop + topBand - tip.y) / topBand));
-        const climb = slopeClimb * (1 - closenessToTop);
+        // The plotted point meets the lower centre of the tail while the
+        // aircraft remains level, matching the original Aviator artwork.
+        const anchor = "translate(-2%, -63%)";
 
         if (currentPhase === "crashed") {
           const gone = Math.min(1, (time - crashAt) / 900);
           plane.style.opacity = String(Math.max(0, 1 - gone * 1.15));
-          plane.style.transform = `translate(${tip.x + gone * 420}px, ${tip.y - gone * 200}px) rotate(${climb - 4}deg) scale(${1 - gone * 0.3}) ${anchor}`;
+          plane.style.transform = `translate(${tip.x + gone * 420}px, ${tip.y - gone * 200}px) scale(${1 - gone * 0.3}) ${anchor}`;
         } else if (currentPhase === "betting") {
           plane.style.opacity = "1";
-          plane.style.transform = `translate(${originX}px, ${originY}px) rotate(0deg) ${anchor}`;
+          plane.style.transform = `translate(${originX}px, ${originY}px) ${anchor}`;
         } else {
           plane.style.opacity = "1";
-          plane.style.transform = `translate(${tip.x}px, ${tip.y}px) rotate(${climb + wobble}deg) ${anchor}`;
+          plane.style.transform = `translate(${tip.x}px, ${tip.y}px) ${anchor}`;
         }
       }
 
