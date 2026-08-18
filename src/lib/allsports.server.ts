@@ -1101,7 +1101,9 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
           ).catch(() => null)
         : Promise.resolve(null),
       fetchStandings(sport, Number(fixture["league_key"] ?? 0)).catch(() => []),
-      call<Json[]>(sport, { met: "Videos", matchId }, 10 * 60_000).catch(() => null),
+      call<Json[]>(sport, { met: "Videos", eventId: matchId, matchId }, 10 * 60_000).catch(
+        () => null,
+      ),
       isFootball
         ? call<Json[]>(sport, { met: "Probabilities", matchId }, 5 * 60_000).catch(() => null)
         : Promise.resolve(null),
@@ -1132,6 +1134,27 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
     markets = mergeMarkets(markets, parseLiveOdds(rows));
   }
 
+  const detailHome = String(
+    (isTennis ? fixture["event_first_player"] : fixture["event_home_team"]) ?? "",
+  );
+  const detailAway = String(
+    (isTennis ? fixture["event_second_player"] : fixture["event_away_team"]) ?? "",
+  );
+  const detailFinished = FINISHED_RE.test(String(fixture["event_status"] ?? ""));
+  // Unpriced fixtures get the same derived prices the board shows, so the
+  // detail page always lists every market the fixture is bettable on.
+  if (!detailFinished && isUnpriced(mainOdds(sport, markets))) {
+    markets = mergeMarkets(
+      markets,
+      derivedMarkets({
+        id: matchId,
+        home: detailHome,
+        away: detailAway,
+        drawPossible: DRAW_SPORTS[sport] ?? true,
+      }),
+    );
+  }
+
   const lineupNode = fixture["lineups"];
   const hasLineups = lineupNode && typeof lineupNode === "object";
 
@@ -1153,12 +1176,12 @@ export async function fetchMatchDetails(sport: Sport, matchId: string): Promise<
           away: toTeamLineup((lineupNode as Json)["away_team"]),
         }
       : null,
-    videos: (videoRes ?? [])
-      .map((v) => ({
-        title: String(v["video_title"] ?? "Highlight"),
-        url: String(v["video_url"] ?? ""),
-      }))
-      .filter((v) => v.url),
+    videos: await resolveVideos(videoRes, {
+      home: detailHome,
+      away: detailAway,
+      league: String(fixture["league_name"] ?? ""),
+      finished: detailFinished,
+    }),
     comments: toComments(commentRes, matchId),
     probabilities: toProbabilities(probRes),
     boxScore: toBoxScore(fixture["player_statistics"]),
