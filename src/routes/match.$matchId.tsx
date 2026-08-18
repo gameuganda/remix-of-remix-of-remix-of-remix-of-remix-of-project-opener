@@ -1052,8 +1052,9 @@ function thumbUrl(url: string): string | null {
 }
 
 /**
- * Small floating player. Stays inside the app (no navigation away), sits above
- * the page without a backdrop so nothing behind it is dimmed or blurred.
+ * Large centered floating player. Opens with a soft "app from the dock" scale
+ * effect, stays inside the app (no navigation away), and never dims or blurs
+ * the page behind it.
  */
 function FloatingPlayer({
   videos,
@@ -1067,22 +1068,36 @@ function FloatingPlayer({
   onClose: () => void;
 }) {
   const video = videos[index];
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setOpen(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
   if (!video) return null;
   return (
-    <div className="pointer-events-none fixed inset-0 z-[80] flex items-end justify-end p-3 sm:p-5">
-      <div className="pointer-events-auto w-full max-w-[420px] overflow-hidden rounded-2xl bg-xb-panel shadow-2xl ring-1 ring-xb-line">
-        <div className="flex items-center gap-2 border-b border-xb-line px-3 py-2">
-          <Play className="h-3.5 w-3.5 shrink-0 text-xb-blue" />
-          <span className="flex-1 truncate text-[12px] font-semibold text-xb-text">
+    <div className="pointer-events-none fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6">
+      <div
+        className={`pointer-events-auto flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-xb-panel shadow-[0_24px_80px_-16px_rgba(0,0,0,0.55)] ring-1 ring-xb-line transition-all duration-500 ease-[cubic-bezier(0.22,1.2,0.36,1)] ${
+          open ? "scale-100 opacity-100 translate-y-0" : "scale-50 opacity-0 translate-y-12"
+        }`}
+        style={{ maxHeight: "calc(100dvh - 2rem)" }}
+      >
+        <div className="flex items-center gap-3 border-b border-xb-line px-4 py-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-xb-blue/10 text-xb-blue">
+            <Play className="h-4 w-4" />
+          </span>
+          <span className="flex-1 truncate text-[13px] font-semibold text-xb-text">
             {video.title}
           </span>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close video"
-            className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text-muted transition hover:bg-xb-panel-alt hover:text-xb-text"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-xb-odds text-xb-text-muted transition hover:bg-xb-panel-alt hover:text-xb-text"
           >
-            <X className="h-3.5 w-3.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         <div className="aspect-video w-full bg-black">
@@ -1099,27 +1114,27 @@ function FloatingPlayer({
           />
         </div>
         {videos.length > 1 ? (
-          <div className="flex items-center justify-between gap-2 px-3 py-2">
-            <span className="text-[11px] text-xb-text-muted">
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="text-[12px] text-xb-text-muted">
               Clip {index + 1} of {videos.length} · if a clip is blocked by the rights holder, try
               the next one
             </span>
-            <span className="flex gap-1">
+            <span className="flex gap-2">
               <button
                 type="button"
                 aria-label="Previous clip"
                 onClick={() => onIndex((index - 1 + videos.length) % videos.length)}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
+                <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 type="button"
                 aria-label="Next clip"
                 onClick={() => onIndex((index + 1) % videos.length)}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-xb-odds text-xb-text transition hover:bg-xb-blue hover:text-xb-on-dark"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <ChevronRight className="h-4 w-4" />
               </button>
             </span>
           </div>
