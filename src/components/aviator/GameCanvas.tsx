@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 
-import cloudsAsset from "@/assets/aviator/clouds.png.asset.json";
 import { PlaneSprite } from "./PlaneSprite";
 import { BETTING_SECONDS, GROWTH_RATE, formatMultiplier, type Phase } from "@/lib/aviator/game";
 
@@ -30,9 +29,6 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
     if (!canvas) return;
     const context = canvas.getContext("2d");
     if (!context) return;
-
-    const clouds = new Image();
-    clouds.src = cloudsAsset.url;
 
     let frame = 0;
     let crashAt = 0;
