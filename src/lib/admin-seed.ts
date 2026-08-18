@@ -212,6 +212,7 @@ const defaultSettings = (): SiteSettings => ({
   affiliateProgram: true,
   mobileMoneyProviders: "MTN Mobile Money, Airtel Money",
   license: "NLGRB/OP/0142",
+  allsportsApiKey: "9e1d457ef257f5c370a7d19fc5b2b2746a3e6b9058a0e60f8ce40cb58fadb966",
   address: "Plot 24 Kampala Road, Kampala, Uganda",
 });
 
