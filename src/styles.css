@@ -428,3 +428,99 @@
   background: linear-gradient(180deg, oklch(0.62 0.2 25), oklch(0.52 0.19 25));
   box-shadow: 0 6px 20px oklch(0.55 0.19 25 / 30%);
 }
+
+/* ---- BET PLUS+ milky player loader (macOS-style glass) ---- */
+@keyframes bp-shimmer {
+  0% {
+    background-position: -180% 0;
+  }
+  100% {
+    background-position: 180% 0;
+  }
+}
+
+@keyframes bp-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.14);
+    opacity: 0.9;
+  }
+}
+
+@keyframes bp-milky-drift {
+  0% {
+    transform: translate3d(-6%, -4%, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(6%, 4%, 0) scale(1.25);
+  }
+  100% {
+    transform: translate3d(-6%, -4%, 0) scale(1.1);
+  }
+}
+
+@keyframes bp-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@utility bp-glass-btn {
+  border-radius: 9999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, white 22%, transparent),
+    color-mix(in oklab, white 6%, transparent)
+  );
+  border: 1px solid color-mix(in oklab, white 20%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, white 35%, transparent),
+    0 4px 14px -6px rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(10px) saturate(160%);
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1.2, 0.36, 1),
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+@utility bp-glass-btn-hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, white 34%, transparent),
+    color-mix(in oklab, white 12%, transparent)
+  );
+  transform: scale(1.06);
+}
+
+@utility bp-wordmark-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in oklab, white 62%, transparent) 0%,
+    white 42%,
+    color-mix(in oklab, white 62%, transparent) 70%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: bp-shimmer 2.4s linear infinite;
+}
+
+@keyframes bp-slide {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}

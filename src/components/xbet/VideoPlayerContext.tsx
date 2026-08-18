@@ -8,6 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { PlayerLoader } from "@/components/xbet/PlayerLoader";
+
 import {
   ChevronLeft,
   ChevronRight,
@@ -216,18 +218,8 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
                 onClick={() => post(playing ? "pauseVideo" : "playVideo")}
                 className="absolute inset-0 h-full w-full cursor-default bg-transparent"
               />
-              {!showVideo ? (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
-                  <span className="relative flex h-10 w-10 items-center justify-center">
-                    <span className="absolute inset-0 animate-ping rounded-full bg-xb-blue/30" />
-                    <span className="absolute inset-0 animate-spin rounded-full border-2 border-xb-blue/25 border-t-xb-blue" />
-                    <Play className="h-4 w-4 text-xb-blue" />
-                  </span>
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-xb-text-muted">
-                    Loading stream
-                  </span>
-                </div>
-              ) : null}
+              {!showVideo ? <PlayerLoader /> : null}
+
             </div>
 
             {/* our own control bar */}
@@ -236,7 +228,7 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
                 type="button"
                 aria-label={playing ? "Pause" : "Play"}
                 onClick={() => post(playing ? "pauseVideo" : "playVideo")}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-xb-text-muted transition hover:bg-xb-blue hover:text-xb-on-dark"
+                className="bp-glass-btn hover:bp-glass-btn-hover flex h-6 w-6 shrink-0 items-center justify-center text-xb-text active:scale-95"
               >
                 {playing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
               </button>
@@ -247,7 +239,7 @@ export function VideoPlayerProvider({ children }: { children: ReactNode }) {
                   post(muted ? "unMute" : "mute");
                   setMuted((m) => !m);
                 }}
-                className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-xb-text-muted transition hover:bg-xb-blue hover:text-xb-on-dark"
+                className="bp-glass-btn hover:bp-glass-btn-hover flex h-6 w-6 shrink-0 items-center justify-center text-xb-text active:scale-95"
               >
                 {muted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
               </button>
