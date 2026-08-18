@@ -196,7 +196,7 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
         const anchor = "translate(-4%, -50%)";
         const behind = pointAt(Math.max(0, elapsed - 0.35));
         const raw = (Math.atan2(tip.y - behind.y, Math.max(1, tip.x - behind.x)) * 180) / Math.PI;
-        const slopeClimb = Math.max(-14, Math.min(0, raw * 0.45));
+        const slopeClimb = Math.max(-20, Math.min(0, raw * 0.55));
         const topBand = 80;
         const closenessToTop = Math.max(0, Math.min(1, (padTop + topBand - tip.y) / topBand));
         const climb = slopeClimb * (1 - closenessToTop);
@@ -231,7 +231,7 @@ export function GameCanvas({ phase, multiplier, countdown, roundNumber }: Props)
       <div
         ref={planeRef}
         className="pointer-events-none absolute left-0 top-0 w-[78px] origin-left will-change-transform sm:w-[104px] lg:w-[124px]"
-        style={{ aspectRatio: "1024 / 640" }}
+        style={{ aspectRatio: "150 / 74" }}
       >
         <PlaneSprite spinning={!crashed} />
       </div>
