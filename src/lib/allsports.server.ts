@@ -270,7 +270,7 @@ async function fetchLiveOdds(
 
 export type { MainOdds } from "./allsports.server-types";
 import type { MainOdds } from "./allsports.server-types";
-import { derivedMainOdds, isUnpriced } from "./derived-odds";
+import { derivedMainOdds, derivedMarkets, isUnpriced } from "./derived-odds";
 
 /** Sports where a fixture can end level, so the X column is meaningful. */
 const DRAW_SPORTS: Record<string, boolean> = {
