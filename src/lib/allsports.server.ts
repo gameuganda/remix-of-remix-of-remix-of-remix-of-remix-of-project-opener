@@ -268,16 +268,37 @@ async function fetchLiveOdds(
 
 /* ---------------- normalisation ---------------- */
 
-export type MainOdds = {
-  home: number | null;
-  draw: number | null;
-  away: number | null;
-  over: number | null;
-  under: number | null;
-  bttsYes: number | null;
-  bttsNo: number | null;
-  line: string;
+export type { MainOdds } from "./allsports.server-types";
+import type { MainOdds } from "./allsports.server-types";
+import { derivedMainOdds, isUnpriced } from "./derived-odds";
+
+/** Sports where a fixture can end level, so the X column is meaningful. */
+const DRAW_SPORTS: Record<string, boolean> = {
+  football: true,
+  cricket: false,
+  basketball: false,
+  tennis: false,
 };
+
+/**
+ * Main-market prices for a fixture, falling back to derived pricing whenever
+ * the provider publishes no usable market. Keeps every playable fixture
+ * bettable instead of showing an empty row.
+ */
+function resolvedOdds(
+  sport: Sport,
+  markets: Market[],
+  fixture: { id: string; home: string; away: string; finished: boolean },
+): MainOdds {
+  const real = mainOdds(sport, markets);
+  if (!isUnpriced(real) || fixture.finished || !fixture.id) return real;
+  return derivedMainOdds({
+    id: fixture.id,
+    home: fixture.home,
+    away: fixture.away,
+    drawPossible: DRAW_SPORTS[sport] ?? true,
+  });
+}
 
 export type PeriodScore = { label: string; home: string; away: string };
 
@@ -436,9 +457,11 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
   const status = String(f["event_status"] ?? "");
   const date = dateKey(f);
   const time = String(f["event_time"] ?? "");
+  const id = String(f["event_key"] ?? "");
+  const isFinished = FINISHED_RE.test(status) || VOID_RE.test(status);
 
   return {
-    id: String(f["event_key"] ?? ""),
+    id,
     sport,
     date,
     time,
@@ -457,7 +480,7 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
       !VOID_RE.test(status) &&
       (String(f["event_live"] ?? "0") === "1" ||
         /^\d+|half|^ht$|break|set \d|quarter|q\d|^ot$|pen/i.test(status)),
-    finished: FINISHED_RE.test(status) || VOID_RE.test(status),
+    finished: isFinished,
 
     home,
     away,
@@ -469,7 +492,7 @@ function normalise(sport: Sport, f: Json, markets: Market[]): Match {
     awayScore,
     periods: periodScores(sport, f),
     marketCount: markets.length,
-    odds: mainOdds(sport, markets),
+    odds: resolvedOdds(sport, markets, { id, home, away, finished: isFinished }),
   };
 }
 
@@ -1459,14 +1482,20 @@ export async function fetchOddsForIds(
 
 export type MatchOddsPatch = { id: string; marketCount: number; odds: MainOdds };
 
-/** Main-market odds for a list of match ids, used to hydrate rows lazily. */
+/**
+ * Main-market odds for a list of match ids, used to hydrate rows lazily.
+ * Only genuinely priced fixtures are returned — an unpriced result would
+ * otherwise overwrite the derived prices the row already shows.
+ */
 export async function fetchMatchOdds(sport: Sport, ids: string[]): Promise<MatchOddsPatch[]> {
   const found = await fetchOddsForIds(sport, ids);
-  return [...found.entries()].map(([id, markets]) => ({
-    id,
-    marketCount: markets.length,
-    odds: mainOdds(sport, markets),
-  }));
+  const patches: MatchOddsPatch[] = [];
+  for (const [id, markets] of found) {
+    const odds = mainOdds(sport, markets);
+    if (isUnpriced(odds)) continue;
+    patches.push({ id, marketCount: markets.length, odds });
+  }
+  return patches;
 }
 
 /**
