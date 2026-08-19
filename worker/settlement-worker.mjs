@@ -13,7 +13,9 @@
  *                          (paste it with the literal \n escapes, that's fine)
  * Optional
  *   ALLSPORTS_API_KEY      defaults to the site key
- *   POLL_MS                loop interval, default 2000
+ *   POLL_MS                loop interval, default 60000 (1 minute). Going much
+ *                          lower burns the Firestore daily read quota, which
+ *                          stops ALL settlement for the rest of the day.
  *
  * Get the three Firebase values from:
  *   Firebase console → Project settings → Service accounts → Generate new private key.
@@ -48,8 +50,8 @@ if (serviceAccountJson) {
 }
 const ALLSPORTS_KEY =
   process.env.ALLSPORTS_API_KEY ||
-  "235d3ade0664feb00d281d00a83bf7c7786a0d3d5d5dc6de8f40859f240ca9a4";
-const POLL_MS = Number(process.env.POLL_MS || 2000);
+  "9e1d457ef257f5c370a7d19fc5b2b2746a3e6b9058a0e60f8ce40cb58fadb966";
+const POLL_MS = Math.max(Number(process.env.POLL_MS || 60_000), 20_000);
 const PORT = Number(process.env.PORT || 3000);
 const VIRTUAL_RESULTS = "https://desktop.fortebet.ug/api/web/v1/virtual-soccer/results";
 const DB = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`;
