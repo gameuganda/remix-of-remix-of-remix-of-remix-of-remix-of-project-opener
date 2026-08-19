@@ -36,7 +36,13 @@ export function BetSettlement() {
   const results = useQuery({ ...virtualResultsQuery(), enabled: hasVirtual && !!profile });
 
   const realGroups = useMemo(() => {
-    const map = pendingFixtures(watching);
+    // Only fixtures that have kicked off can be graded — asking the provider
+    // about future games wastes calls on every refresh.
+    const started = watching.map((b) => ({
+      ...b,
+      matches: b.matches.filter((m) => Number(m.startsAt || 0) <= Date.now() + 60_000),
+    }));
+    const map = pendingFixtures(started);
     map.delete("virtual");
     return [...map.entries()]
       .map(([sport, ids]) => ({ sport: sport as Sport, ids: [...ids].sort() }))
@@ -52,9 +58,9 @@ export function BetSettlement() {
       return rows.flat();
     },
     enabled: realGroups.length > 0 && !!profile,
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
     refetchIntervalInBackground: true,
-    staleTime: 5_000,
+    staleTime: 20_000,
   });
 
   useEffect(() => {
