@@ -586,6 +586,9 @@ async function tick() {
   for (const bet of bets) {
     for (const leg of bet.matches) {
       if (!leg.matchId || isFinal(leg.status)) continue;
+      // A fixture that has not kicked off yet can never be graded — skip it so
+      // we don't spend provider calls (and quota) on it every single minute.
+      if (Number(leg.startsAt || 0) > Date.now() + 60_000) continue;
       if ((leg.sport || "football") === "virtual") {
         needVirtual = true;
         continue;
